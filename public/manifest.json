@@ -1,0 +1,40 @@
+{
+  "name": "Soporte TI - Colegio Montessori",
+  "short_name": "TI Montessori",
+  "description": "Sistema de gestión de requerimientos y tickets de soporte para el Departamento de Informática - Colegio Montessori",
+  "theme_color": "#2563EB",
+  "background_color": "#0F172A",
+  "display": "standalone",
+  "orientation": "any",
+  "scope": "/",
+  "start_url": "/",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "categories": ["productivity", "utilities"],
+  "shortcuts": [
+    {
+      "name": "Nueva Tarea",
+      "short_name": "Nueva",
+      "description": "Crear una nueva tarea",
+      "url": "/?new=true",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Panel TV",
+      "short_name": "TV",
+      "description": "Vista de Panel de TV",
+      "url": "/tv",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "label": "Gestión de Tareas"
+    }
+  ]
+}
