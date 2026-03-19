@@ -1,73 +1,36 @@
-# React + TypeScript + Vite
+# Montessori TI Support
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Sistema integral de gestión de soporte técnico para el Departamento de Informática del **Colegio Montessori**. Diseñado para optimizar la recepción y seguimiento de tickets de servicios, reparaciones y solicitudes tecnológicas.
 
-Currently, two official plugins are available:
+## ✨ Funcionalidades
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Dashboard Kanban**: Gestión visual del estado de las tareas (Pendiente, En Progreso, Resuelto).
+- **Módulo de Auditoría**: Estadísticas detalladas, KPIs de rendimiento y seguimiento de eficiencia técnica.
+- **Solicitud Pública**: Formulario externo para que profesores y colegas envíen tickets sin necesidad de registro.
+- **Aprobación TI**: Flujo de revisión donde el personal técnico audita, cataloga y aprueba las solicitudes entrantes.
+- **TV Page**: Interfaz optimizada para pantallas grandes, permitiendo monitoreo en tiempo real del estado de los tickets.
+- **Buscador IA**: Asistente inteligente para la consulta rápida de datos históricos y estados de tareas.
 
-## React Compiler
+## 🚀 Despliegue
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+El proyecto se encuentra desplegado y gestionado a través de **Insforge**.
 
-## Expanding the ESLint configuration
+- **URL de Producción**: [https://jxw3tu8c.insforge.site/](https://jxw3tu8c.insforge.site/)
+- **URL de Solicitud Pública**: [https://jxw3tu8c.insforge.site/solicitud](https://jxw3tu8c.insforge.site/solicitud)
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### Para realizar un nuevo despliegue:
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run build
+insforge deployments deploy ./dist
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 🛠️ Tecnologías
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+- **Frontend**: React + Vite
+- **Database**: Insforge Database Engine
+- **Estilos**: Vanilla CSS (Premium Dark Theme)
+- **Deployment**: Insforge CLI
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+---
+*Desarrollado por BlazzzPlay para el Colegio Montessori.*
