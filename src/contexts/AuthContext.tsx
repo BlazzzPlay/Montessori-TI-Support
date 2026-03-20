@@ -26,6 +26,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const checkSession = async () => {
       try {
+        const storedRefreshToken = localStorage.getItem('insforge_refresh_token')
+        if (storedRefreshToken) {
+          // Attempt to restore session using stored refresh token
+          await insforge.auth.refreshSession({ refreshToken: storedRefreshToken })
+        }
+
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data } = await (insforge.auth as any).getCurrentSession()
         if (data?.user) {
@@ -36,8 +42,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             rol: 'tecnico'
           })
         }
-      } catch {
-        // No session — that's fine
+      } catch (error) {
+        console.error('Session restoration failed:', error)
+        localStorage.removeItem('insforge_refresh_token')
       } finally {
         setLoading(false)
       }
@@ -49,7 +56,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const { data, error } = await insforge.auth.signInWithPassword({ email, password })
       if (error) return { error: 'Credenciales incorrectas. Verifica tu email y contraseña.' }
+      
       if (data?.user) {
+        if (data.refreshToken) {
+          localStorage.setItem('insforge_refresh_token', data.refreshToken)
+        }
         setUser({
           id: data.user.id,
           email: data.user.email,
@@ -65,6 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async () => {
     await insforge.auth.signOut()
+    localStorage.removeItem('insforge_refresh_token')
     setUser(null)
   }, [])
 

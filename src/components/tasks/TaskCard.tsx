@@ -49,6 +49,43 @@ export function TaskCard({ tarea, onClick, compact = false }: TaskCardProps) {
         </div>
       )}
 
+      {/* Progress Bar & Subtasks Summary */}
+      {(tarea.mostrar_progreso || (tarea.subtareas && tarea.subtareas.length > 0)) && (
+        <div style={{ marginTop: '0.75rem', marginBottom: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          {tarea.mostrar_progreso && (
+            <div style={{ width: '100%' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '4px' }}>
+                <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>Progreso</span>
+                <span style={{ fontWeight: 700, color: 'var(--brand-600)' }}>{tarea.progreso}%</span>
+              </div>
+              <div style={{ height: '6px', width: '100%', background: 'var(--bg-hover)', borderRadius: '3px', overflow: 'hidden' }}>
+                <div 
+                  style={{ 
+                    height: '100%', 
+                    width: `${tarea.progreso}%`, 
+                    background: 'var(--brand-500)', 
+                    transition: 'width 0.3s ease',
+                    borderRadius: '3px'
+                  }} 
+                />
+              </div>
+            </div>
+          )}
+
+          {tarea.subtareas && tarea.subtareas.length > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+              <span style={{ 
+                display: 'inline-flex', padding: '2px 6px', borderRadius: '4px',
+                background: 'var(--bg-hover)', border: '1px solid var(--border-default)',
+                color: 'var(--text-secondary)', fontWeight: 600
+              }}>
+                📋 {tarea.subtareas.filter(s => s.completada).length}/{tarea.subtareas.length} pasos
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Status (list view) */}
       {compact && <StatusBadge estado={tarea.estado} />}
 

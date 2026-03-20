@@ -66,7 +66,10 @@ export function useTareas() {
         prioridad: form.prioridad,
         fecha_limite: form.fecha_limite || null,
         mostrar_auditoria: form.mostrar_auditoria ?? true,
-        estado: form.estado || 'pendiente'
+        estado: form.estado || 'pendiente',
+        progreso: form.progreso || 0,
+        mostrar_progreso: form.mostrar_progreso || false,
+        subtareas: form.subtareas || []
       }]).select()
       if (error) return { error: error.message }
       const tareaId = data?.[0]?.id

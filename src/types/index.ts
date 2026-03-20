@@ -29,6 +29,23 @@ export interface Tarea {
   resuelto_at?: string
   etiquetas?: Etiqueta[]
   mostrar_auditoria?: boolean
+  // Nuevas funcionalidades
+  progreso?: number // 0-100
+  mostrar_progreso?: boolean
+  subtareas?: Subtarea[]
+}
+
+export interface Subtarea {
+  id: string
+  titulo: string
+  completada: boolean
+  checklist?: ChecklistItem[]
+}
+
+export interface ChecklistItem {
+  id: string
+  texto: string
+  completada: boolean
 }
 
 export interface Comentario {
@@ -49,6 +66,10 @@ export interface TareaFormData {
   etiqueta_ids: string[]
   mostrar_auditoria: boolean
   estado?: EstadoTarea
+  // Nuevas funcionalidades
+  progreso?: number
+  mostrar_progreso?: boolean
+  subtareas?: Subtarea[]
 }
 
 export interface UserProfile {
@@ -60,9 +81,18 @@ export interface UserProfile {
 
 export interface AuditStats {
   totalResueltas: number
-  tiempoPromedioHoras: number
-  masRapidoDelMes: number
+  tiempoPromedioHoras?: number // Opcional ahora que lo quitaremos del UI
+  masRapidoDelMes?: number
   porcentajeCambioSemanal: number
+  estaSemana?: number
+}
+
+export interface HelpCounters {
+  apoderados: number
+  alumnos: number
+  profesores: number
+  administrativos: number
+  lastResetMonth: string // Formato "YYYY-MM"
 }
 
 export interface EstadisticaEtiqueta {

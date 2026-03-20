@@ -318,6 +318,7 @@ export function ConfiguracionPage() {
                   { label: 'Dashboard de Tareas (privado)', url: '/' },
                   { label: 'Panel TV (público)', url: '/tv' },
                   { label: 'Dashboard de Auditoría (público)', url: '/auditoria' },
+                  { label: 'Formulario de Solicitud (público)', url: '/solicitud' },
                 ].map(item => (
                   <div key={item.url} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.625rem 0.875rem', background: 'var(--bg-raised)', borderRadius: 'var(--radius-sm)' }}>
                     <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>{item.label}</span>

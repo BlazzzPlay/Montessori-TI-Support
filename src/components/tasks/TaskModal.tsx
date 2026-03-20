@@ -26,7 +26,10 @@ export function TaskModal({  tarea,
     prioridad: tarea?.prioridad ?? 'media',
     fecha_limite: tarea?.fecha_limite ? tarea.fecha_limite.split('T')[0] : '',
     etiqueta_ids: tarea?.etiquetas?.map(e => e.id) ?? [],
-    mostrar_auditoria: tarea?.mostrar_auditoria ?? true
+    mostrar_auditoria: tarea?.mostrar_auditoria ?? true,
+    progreso: tarea?.progreso ?? 0,
+    mostrar_progreso: tarea?.mostrar_progreso ?? false,
+    subtareas: tarea?.subtareas ?? []
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -42,6 +45,79 @@ export function TaskModal({  tarea,
         ? prev.etiqueta_ids.filter(x => x !== id)
         : [...prev.etiqueta_ids, id]
     }))
+
+  const addSubtarea = () => {
+    setForm(prev => ({
+      ...prev,
+      subtareas: [...(prev.subtareas || []), { 
+        id: Math.random().toString(36).substr(2, 9), 
+        titulo: '', 
+        completada: false,
+        checklist: []
+      }]
+    }))
+  }
+
+  const updateSubtarea = (id: string, text: string) => {
+    setForm(prev => ({
+      ...prev,
+      subtareas: prev.subtareas?.map(s => s.id === id ? { ...s, titulo: text } : s)
+    }))
+  }
+
+  const toggleSubtarea = (id: string) => {
+    setForm(prev => ({
+      ...prev,
+      subtareas: prev.subtareas?.map(s => s.id === id ? { ...s, completada: !s.completada } : s)
+    }))
+  }
+
+  const removeSubtarea = (id: string) => {
+    setForm(prev => ({
+      ...prev,
+      subtareas: prev.subtareas?.filter(s => s.id !== id)
+    }))
+  }
+
+  const addChecklistItem = (subtareaId: string) => {
+    setForm(prev => ({
+      ...prev,
+      subtareas: prev.subtareas?.map(s => s.id === subtareaId ? {
+        ...s,
+        checklist: [...(s.checklist || []), { id: Math.random().toString(36).substr(2, 9), texto: '', completada: false }]
+      } : s)
+    }))
+  }
+
+  const updateChecklistItem = (subId: string, itemId: string, text: string) => {
+    setForm(prev => ({
+      ...prev,
+      subtareas: prev.subtareas?.map(s => s.id === subId ? {
+        ...s,
+        checklist: s.checklist?.map(i => i.id === itemId ? { ...i, texto: text } : i)
+      } : s)
+    }))
+  }
+
+  const toggleChecklistItem = (subId: string, itemId: string) => {
+    setForm(prev => ({
+      ...prev,
+      subtareas: prev.subtareas?.map(s => s.id === subId ? {
+        ...s,
+        checklist: s.checklist?.map(i => i.id === itemId ? { ...i, completada: !i.completada } : i)
+      } : s)
+    }))
+  }
+
+  const removeChecklistItem = (subId: string, itemId: string) => {
+    setForm(prev => ({
+      ...prev,
+      subtareas: prev.subtareas?.map(s => s.id === subId ? {
+        ...s,
+        checklist: s.checklist?.filter(i => i.id !== itemId)
+      } : s)
+    }))
+  }
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -205,6 +281,122 @@ export function TaskModal({  tarea,
                       <TagBadge etiqueta={et} />
                     </button>
                   ))}
+                </div>
+              </div>
+
+              {/* Nuevas: Progreso y Sub-tareas */}
+              <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '1.25rem', marginTop: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                
+                {/* Control de Progreso */}
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 600 }}>
+                      <input 
+                        type="checkbox" 
+                        checked={form.mostrar_progreso} 
+                        onChange={e => setForm(p => ({ ...p, mostrar_progreso: e.target.checked }))} 
+                        style={{ accentColor: 'var(--brand-500)', width: 18, height: 18 }}
+                      />
+                      Habilitar porcentaje de avance
+                    </label>
+                    {form.mostrar_progreso && (
+                      <span style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--brand-500)', background: 'var(--brand-50)', padding: '2px 8px', borderRadius: '4px' }}>
+                        {form.progreso}%
+                      </span>
+                    )}
+                  </div>
+                  
+                  {form.mostrar_progreso && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                      <input 
+                        type="range" 
+                        min="0" max="100" step="5"
+                        value={form.progreso} 
+                        onChange={e => setForm(p => ({ ...p, progreso: parseInt(e.target.value) }))}
+                        style={{ flex: 1, accentColor: 'var(--brand-500)', height: '6px', borderRadius: '3px' }}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Checklist de Sub-tareas */}
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                    <label className="form-label" style={{ marginBottom: 0 }}>Pasos / Check-list de la tarea</label>
+                    <button type="button" className="btn btn-ghost btn-sm" onClick={addSubtarea} style={{ fontSize: '0.75rem', padding: '2px 8px', color: 'var(--brand-600)' }}>
+                      + Agregar paso
+                    </button>
+                  </div>
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {form.subtareas?.length === 0 ? (
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center', padding: '1.5rem', border: '1px dashed var(--border-default)', borderRadius: 'var(--radius-md)', background: 'var(--bg-hover)' }}>
+                        No hay pasos agregados aún. Comienza agregando uno para organizar mejor el trabajo.
+                      </div>
+                    ) : (
+                      form.subtareas?.map((st) => (
+                        <div key={st.id} style={{ 
+                          display: 'flex', flexDirection: 'column', gap: '0.5rem', 
+                          padding: '0.5rem', background: 'var(--bg-hover)', border: '1px solid var(--border-subtle)',
+                          borderRadius: 'var(--radius-md)'
+                        }}>
+                          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                            <input 
+                              type="checkbox" 
+                              checked={st.completada} 
+                              onChange={() => toggleSubtarea(st.id)}
+                              style={{ accentColor: 'var(--success-500)', width: 18, height: 18, flexShrink: 0 }}
+                            />
+                            <input 
+                              type="text" 
+                              className="input" 
+                              style={{ 
+                                padding: '0.35rem 0.625rem', fontSize: '0.875rem', fontWeight: 600,
+                                textDecoration: st.completada ? 'line-through' : 'none',
+                                opacity: st.completada ? 0.6 : 1,
+                                background: 'transparent', border: 'none'
+                              }} 
+                              placeholder="Título del paso principal..." 
+                              value={st.titulo} 
+                              onChange={e => updateSubtarea(st.id, e.target.value)} 
+                            />
+                            <button type="button" className="btn btn-ghost btn-sm" onClick={() => addChecklistItem(st.id)} style={{ fontSize: '0.7rem', color: 'var(--brand-500)' }}>+ Item</button>
+                            <button type="button" className="btn btn-ghost btn-icon btn-sm" onClick={() => removeSubtarea(st.id)} style={{ padding: '0.25rem' }}>✕</button>
+                          </div>
+
+                          {/* Nested Checklist */}
+                          {st.checklist && st.checklist.length > 0 && (
+                            <div style={{ paddingLeft: '2rem', display: 'flex', flexDirection: 'column', gap: '0.375rem', marginBottom: '0.25rem' }}>
+                              {st.checklist.map(item => (
+                                <div key={item.id} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                  <input 
+                                    type="checkbox" 
+                                    checked={item.completada} 
+                                    onChange={() => toggleChecklistItem(st.id, item.id)}
+                                    style={{ accentColor: 'var(--brand-400)', width: 14, height: 14, flexShrink: 0 }}
+                                  />
+                                  <input 
+                                    type="text" 
+                                    className="input" 
+                                    style={{ 
+                                      padding: '2px 6px', fontSize: '0.75rem',
+                                      textDecoration: item.completada ? 'line-through' : 'none',
+                                      opacity: item.completada ? 0.6 : 1,
+                                      background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-subtle)'
+                                    }} 
+                                    placeholder="Detalle..." 
+                                    value={item.texto} 
+                                    onChange={e => updateChecklistItem(st.id, item.id, e.target.value)} 
+                                  />
+                                  <button type="button" className="btn btn-ghost btn-icon btn-sm" onClick={() => removeChecklistItem(st.id, item.id)} style={{ width: '18px', height: '18px', padding: 0 }}>✕</button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))
+                    )}
+                  </div>
                 </div>
               </div>
 

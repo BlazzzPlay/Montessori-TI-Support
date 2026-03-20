@@ -5,6 +5,7 @@ import { TaskCard } from '../components/tasks/TaskCard'
 import { TaskModal } from '../components/tasks/TaskModal'
 import { AIAssistant } from '../components/ai/AIAssistant'
 import { useTareas } from '../hooks/useTareas'
+import { useHelpCounters } from '../hooks/useHelpCounters'
 import { useToast } from '../contexts/ThemeContext'
 import { STATUS_LABELS, PRIORITY_ORDER } from '../lib/utils'
 import type { Tarea, EstadoTarea, Prioridad } from '../types'
@@ -20,6 +21,7 @@ type ViewMode = 'kanban' | 'lista'
 
 export function TasksPage() {
   const { tareas, etiquetas, loading, createTarea, updateTarea, deleteTarea } = useTareas()
+  const { helpCounters, incrementCounter } = useHelpCounters()
   const { addToast } = useToast()
 
   const [view, setView] = useState<ViewMode>('kanban')
@@ -100,6 +102,36 @@ export function TasksPage() {
               <button className={`tab ${view === 'lista' ? 'active' : ''}`} onClick={() => setView('lista')}>☰ Lista</button>
             </div>
             <button className="btn btn-primary" onClick={openCreate} id="new-task-btn">+ Nueva</button>
+          </div>
+        </div>
+
+        {/* Tareas Rápidas (Help Counters) */}
+        <div style={{ marginBottom: '1.5rem', background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-lg)', padding: '1.25rem' }}>
+          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span>⚡</span> Tareas Rápidas (Solicitudes Mensuales Directas)
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
+            {[
+              { key: 'apoderados', label: 'Apoderados', color: '#3B82F6', icon: '👨‍👩‍👧‍👦' },
+              { key: 'alumnos', label: 'Alumnos', color: '#10B981', icon: '🎓' },
+              { key: 'profesores', label: 'Profesores', color: '#F59E0B', icon: '👨‍🏫' },
+              { key: 'administrativos', label: 'Administrativos', color: '#6366F1', icon: '🏢' }
+            ].map(item => (
+              <button
+                key={item.key} 
+                className="btn btn-secondary"
+                onClick={() => incrementCounter(item.key)}
+                style={{
+                  height: 'auto', display: 'flex', flexDirection: 'column', gap: '6px',
+                  padding: '12px', border: `1px solid ${item.color}30`, background: `${item.color}05`,
+                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
+                }}
+              >
+                <div style={{ fontSize: '1.5rem' }}>{item.icon}</div>
+                <div style={{ fontSize: '1.75rem', fontWeight: 800, color: item.color, lineHeight: 1 }}>{helpCounters[item.key as keyof typeof helpCounters]}</div>
+                <div style={{ fontSize: '0.625rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>{item.label}</div>
+              </button>
+            ))}
           </div>
         </div>
 

@@ -2,10 +2,11 @@ import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import {
   PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid,
-  Tooltip, ResponsiveContainer, LineChart, Line, Legend
+  Tooltip, ResponsiveContainer, Legend
 } from 'recharts'
 import { useTareas } from '../hooks/useTareas'
-import { formatDate, formatDateTime, getHoursElapsed } from '../lib/utils'
+import { useHelpCounters } from '../hooks/useHelpCounters'
+import { formatDate, formatDateTime } from '../lib/utils'
 import type { Tarea } from '../types'
 
 // ──────────────────────────────────────────────────
@@ -14,21 +15,6 @@ import type { Tarea } from '../types'
 
 function calcStats(tareas: Tarea[]) {
   const resueltas = tareas.filter(t => t.estado === 'resuelto' || t.estado === 'cerrado')
-
-  // Tiempo promedio de resolución en horas
-  const tiempos = resueltas
-    .map(t => {
-      const fin = t.resuelto_at ?? t.updated_at
-      const diff = new Date(fin).getTime() - new Date(t.created_at).getTime()
-      return diff / 3600000 // ms → horas
-    })
-    .filter(h => h > 0)
-
-  const tiempoPromedio = tiempos.length
-    ? Math.round(tiempos.reduce((a, b) => a + b, 0) / tiempos.length * 10) / 10
-    : 0
-
-  const masRapido = tiempos.length ? Math.round(Math.min(...tiempos) * 10) / 10 : 0
 
   // % cambio vs semana anterior (resueltas esta semana vs anterior)
   const now = new Date()
@@ -41,7 +27,7 @@ function calcStats(tareas: Tarea[]) {
   }).length
   const pct = semanaAnterior > 0 ? Math.round(((estaSeamna - semanaAnterior) / semanaAnterior) * 100) : 0
 
-  return { totalResueltas: resueltas.length, tiempoPromedio, masRapido, pct, estaSeamna }
+  return { totalResueltas: resueltas.length, pct, estaSeamna }
 }
 
 function calcEtiquetaStats(tareas: Tarea[]) {
@@ -73,27 +59,6 @@ function calcVolume(tareas: Tarea[]) {
     if (t.estado === 'resuelto' || t.estado === 'cerrado') months[key].resueltas++
   })
   return Object.entries(months).map(([mes, v]) => ({ mes, ...v }))
-}
-
-function calcResolucionSemanal(tareas: Tarea[]) {
-  // Últimas 6 semanas agrupando por semana calendario
-  const resueltas = tareas.filter(t => t.estado === 'resuelto' || t.estado === 'cerrado')
-  const weeks: Record<string, number[]> = {}
-  resueltas.forEach(t => {
-    const d = new Date(t.resuelto_at ?? t.updated_at)
-    const weekNum = Math.floor((Date.now() - d.getTime()) / (7 * 24 * 3600 * 1000))
-    if (weekNum > 5) return
-    const label = weekNum === 0 ? 'Esta sem.' : `Hace ${weekNum}s`
-    if (!weeks[label]) weeks[label] = []
-    const h = (d.getTime() - new Date(t.created_at).getTime()) / 3600000
-    if (h > 0) weeks[label].push(h)
-  })
-  return Object.entries(weeks)
-    .reverse()
-    .map(([semana, horas]) => ({
-      semana,
-      promedio: horas.length ? Math.round(horas.reduce((a, b) => a + b, 0) / horas.length * 10) / 10 : 0
-    }))
 }
 
 // ──────────────────────────────────────────────────
@@ -132,6 +97,7 @@ const PieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) 
 
 export function AuditoriaPage() {
   const { tareas, loading } = useTareas()
+  const { helpCounters, incrementCounter } = useHelpCounters()
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
 
@@ -152,15 +118,13 @@ export function AuditoriaPage() {
   const stats        = useMemo(() => calcStats(visibleTareas), [visibleTareas])
   const etiquetaStats = useMemo(() => calcEtiquetaStats(visibleTareas), [visibleTareas])
   const volumeData   = useMemo(() => calcVolume(visibleTareas), [visibleTareas])
-  const resolucionData = useMemo(() => calcResolucionSemanal(visibleTareas), [visibleTareas])
 
   const handleExport = () => {
-    const headers = ['ID', 'Título', 'Solicitante', 'Ubicación', 'Prioridad', 'Estado', 'Creada', 'Resuelta', 'Horas']
+    const headers = ['ID', 'Título', 'Solicitante', 'Ubicación', 'Prioridad', 'Estado', 'Creada', 'Resuelta']
     const rows = resueltas.map(t => [
       t.id, t.titulo, t.solicitante, t.ubicacion ?? '', t.prioridad, t.estado,
       new Date(t.created_at).toLocaleString('es-CL'),
-      t.resuelto_at ? new Date(t.resuelto_at).toLocaleString('es-CL') : new Date(t.updated_at).toLocaleString('es-CL'),
-      getHoursElapsed(t.created_at, t.resuelto_at)
+      t.resuelto_at ? new Date(t.resuelto_at).toLocaleString('es-CL') : new Date(t.updated_at).toLocaleString('es-CL')
     ])
     const csv = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n')
     const url = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' }))
@@ -211,26 +175,41 @@ export function AuditoriaPage() {
             </div>
           </div>
           <div className="kpi-card">
-            <div className="kpi-value" style={{ color: 'var(--priority-media)' }}>
-              {stats.tiempoPromedio > 0 ? `${stats.tiempoPromedio}h` : '—'}
-            </div>
-            <div className="kpi-label">Tiempo promedio</div>
-            <div className="kpi-trend">⏱ Por ticket resuelto</div>
-          </div>
-          <div className="kpi-card">
-            <div className="kpi-value" style={{ color: 'var(--priority-baja)' }}>
-              {stats.masRapido > 0 ? `${stats.masRapido}h` : '—'}
-            </div>
-            <div className="kpi-label">Más rápido resuelto</div>
-            <div className="kpi-trend">🏆 Mejor tiempo</div>
-          </div>
-          <div className="kpi-card">
             <div className="kpi-value" style={{ color: 'var(--priority-urgente)' }}>
               {visibleTareas.filter(t => t.estado !== 'cerrado' && t.estado !== 'resuelto').length}
             </div>
             <div className="kpi-label">Activas ahora</div>
             <div className="kpi-trend" style={{ color: 'var(--text-muted)' }}>
               {visibleTareas.filter(t => t.prioridad === 'urgente' && t.estado === 'pendiente').length} urgentes pendientes
+            </div>
+          </div>
+          
+          {/* Contadores de Ayuda Mensuales */}
+          <div className="kpi-card" style={{ gridColumn: 'span 2', display: 'flex', flexDirection: 'column', gap: '0.75rem', padding: '1rem' }}>
+            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              ⚡ Tareas Rápidas (Mensual)
+            </div>
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              {[
+                { key: 'apoderados', label: 'Apoderados', color: '#3B82F6', icon: '👨‍👩‍👧‍👦' },
+                { key: 'alumnos', label: 'Alumnos', color: '#10B981', icon: '🎓' },
+                { key: 'profesores', label: 'Profesores', color: '#F59E0B', icon: '👨‍🏫' },
+                { key: 'administrativos', label: 'Administrativos', color: '#6366F1', icon: '🏢' }
+              ].map(item => (
+                <button
+                  key={item.key}
+                  className="btn btn-secondary"
+                  onClick={() => incrementCounter(item.key)}
+                  style={{
+                    flex: 1, height: 'auto', display: 'flex', flexDirection: 'column', gap: '4px',
+                    padding: '8px', border: `1px solid ${item.color}30`, background: `${item.color}08`
+                  }}
+                >
+                  <div style={{ fontSize: '1.25rem' }}>{item.icon}</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 800, color: item.color }}>{helpCounters[item.key as keyof typeof helpCounters]}</div>
+                  <div style={{ fontSize: '0.625rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>{item.label}</div>
+                </button>
+              ))}
             </div>
           </div>
         </motion.div>
@@ -274,27 +253,6 @@ export function AuditoriaPage() {
               </BarChart>
             </ResponsiveContainer>
           </div>
-
-          {/* Línea — tiempo de resolución semanal */}
-          <div className="chart-card" style={{ gridColumn: '1 / -1' }}>
-            <div className="chart-title">⏱ Tiempo Promedio de Resolución por Semana (horas)</div>
-            {resolucionData.length < 2 ? (
-              <div className="empty-state" style={{ height: 180 }}>
-                <div className="empty-state-icon">📈</div>
-                <div className="empty-state-desc">Se necesitan más tickets resueltos para mostrar la tendencia</div>
-              </div>
-            ) : (
-              <ResponsiveContainer width="100%" height={220}>
-                <LineChart data={resolucionData} margin={{ top: 8, right: 20, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
-                  <XAxis dataKey="semana" tick={{ fill: 'var(--text-muted)', fontSize: 11 }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fill: 'var(--text-muted)', fontSize: 11 }} axisLine={false} tickLine={false} unit="h" />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Line type="monotone" dataKey="promedio" name="Horas" stroke="#3B82F6" strokeWidth={2.5} dot={{ fill: '#3B82F6', r: 4 }} activeDot={{ r: 6 }} />
-                </LineChart>
-              </ResponsiveContainer>
-            )}
-          </div>
         </motion.div>
 
         {/* Tabla de historial */}
@@ -324,13 +282,10 @@ export function AuditoriaPage() {
                     <th>Ubicación</th>
                     <th>Creada</th>
                     <th>Resuelta</th>
-                    <th>Tiempo</th>
                   </tr>
                 </thead>
                 <tbody>
                   {resueltas.map((t: Tarea) => {
-                    const horas = getHoursElapsed(t.created_at, t.resuelto_at)
-                    const esRapida = typeof horas === 'number' && horas <= 2
                     return (
                       <tr key={t.id}>
                         <td>
@@ -349,9 +304,6 @@ export function AuditoriaPage() {
                         <td style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{formatDate(t.created_at)}</td>
                         <td style={{ fontSize: '0.8125rem', color: 'var(--priority-baja)', whiteSpace: 'nowrap' }}>
                           {t.resuelto_at ? formatDateTime(t.resuelto_at) : formatDate(t.updated_at)}
-                        </td>
-                        <td style={{ fontSize: '0.8125rem', fontWeight: 700, color: esRapida ? 'var(--priority-baja)' : 'var(--text-secondary)', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
-                          {horas}h {esRapida && '⚡'}
                         </td>
                       </tr>
                     )
