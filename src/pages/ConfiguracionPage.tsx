@@ -320,11 +320,44 @@ export function ConfiguracionPage() {
                   { label: 'Dashboard de Auditoría (público)', url: '/auditoria' },
                   { label: 'Formulario de Solicitud (público)', url: '/solicitud' },
                 ].map(item => (
-                  <div key={item.url} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.625rem 0.875rem', background: 'var(--bg-raised)', borderRadius: 'var(--radius-sm)' }}>
-                    <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>{item.label}</span>
-                    <a href={item.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.8125rem', color: 'var(--brand-500)', fontFamily: 'monospace' }}>
-                      {window.location.origin}{item.url} ↗
-                    </a>
+                  <div key={item.url} style={{ 
+                    display: 'flex', 
+                    flexDirection: 'column',
+                    gap: '0.4rem',
+                    padding: '0.75rem', 
+                    background: 'var(--bg-raised)', 
+                    border: '1px solid var(--border-subtle)',
+                    borderRadius: 'var(--radius-md)' 
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--text-secondary)' }}>{item.label}</span>
+                      <a href={item.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.75rem', color: 'var(--brand-500)', fontWeight: 600 }}>
+                        Abrir enlace ↗
+                      </a>
+                    </div>
+                    <div style={{ 
+                      display: 'flex', 
+                      gap: '0.5rem', 
+                      alignItems: 'center',
+                      background: 'var(--bg-base)',
+                      padding: '0.375rem 0.625rem',
+                      borderRadius: 'var(--radius-sm)',
+                      border: '1px solid var(--border-subtle)'
+                    }}>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontFamily: 'monospace', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {window.location.origin}{item.url}
+                      </span>
+                      <button 
+                        className="btn btn-ghost btn-sm"
+                        style={{ padding: '0.2rem 0.4rem', height: 'auto', fontSize: '0.6875rem', background: 'var(--bg-surface)' }}
+                        onClick={() => {
+                          navigator.clipboard.writeText(`${window.location.origin}${item.url}`);
+                          addToast('📋 Enlace copiado', 'success');
+                        }}
+                      >
+                        Copiar
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
