@@ -106,11 +106,11 @@ export function TasksPage() {
         </div>
 
         {/* Tareas Rápidas (Help Counters) */}
-        <div style={{ marginBottom: '1.5rem', background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-lg)', padding: '1.25rem' }}>
+        <div style={{ marginBottom: '1.5rem', background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-lg)', padding: 'clamp(1rem, 3vw, 1.25rem)' }}>
           <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span>⚡</span> Tareas Rápidas (Solicitudes Mensuales Directas)
+            <span>⚡</span> Tareas Rápidas (Mensual)
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 'clamp(0.5rem, 2vw, 1rem)' }}>
             {[
               { key: 'apoderados', label: 'Apoderados', color: '#3B82F6', icon: '👨‍👩‍👧‍👦' },
               { key: 'alumnos', label: 'Alumnos', color: '#10B981', icon: '🎓' },
@@ -123,7 +123,7 @@ export function TasksPage() {
                 onClick={() => incrementCounter(item.key)}
                 style={{
                   height: 'auto', display: 'flex', flexDirection: 'column', gap: '6px',
-                  padding: '12px', border: `1px solid ${item.color}30`, background: `${item.color}05`,
+                  padding: '12px 8px', border: `1px solid ${item.color}30`, background: `${item.color}05`,
                   transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
                 }}
               >

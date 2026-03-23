@@ -101,7 +101,7 @@ export function SolicitudPage() {
             <input id="solicitante" className="input" type="text" placeholder="Ej: Prof. Juan Pérez" value={form.solicitante} onChange={set('solicitante')} />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.25rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem', marginBottom: '1.25rem' }}>
             <div className="form-group">
               <label className="form-label" htmlFor="ubicacion">Ubicación</label>
               <input id="ubicacion" className="input" type="text" placeholder="Ej: Sala A-203" value={form.ubicacion} onChange={set('ubicacion')} />

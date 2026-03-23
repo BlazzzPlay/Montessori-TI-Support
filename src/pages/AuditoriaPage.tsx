@@ -185,11 +185,11 @@ export function AuditoriaPage() {
           </div>
           
           {/* Contadores de Ayuda Mensuales */}
-          <div className="kpi-card" style={{ gridColumn: 'span 2', display: 'flex', flexDirection: 'column', gap: '0.75rem', padding: '1rem' }}>
-            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              ⚡ Tareas Rápidas (Mensual)
+          <div className="kpi-card" style={{ gridColumn: 'span 2', display: 'flex', flexDirection: 'column', gap: '1rem', padding: '1.25rem' }}>
+            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span>⚡</span> Tareas Rápidas (Mensual)
             </div>
-            <div style={{ display: 'flex', gap: '1rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.75rem' }}>
               {[
                 { key: 'apoderados', label: 'Apoderados', color: '#3B82F6', icon: '👨‍👩‍👧‍👦' },
                 { key: 'alumnos', label: 'Alumnos', color: '#10B981', icon: '🎓' },
@@ -201,12 +201,13 @@ export function AuditoriaPage() {
                   className="btn btn-secondary"
                   onClick={() => incrementCounter(item.key)}
                   style={{
-                    flex: 1, height: 'auto', display: 'flex', flexDirection: 'column', gap: '4px',
-                    padding: '8px', border: `1px solid ${item.color}30`, background: `${item.color}08`
+                    height: 'auto', display: 'flex', flexDirection: 'column', gap: '4px',
+                    padding: '12px 8px', border: `1px solid ${item.color}30`, background: `${item.color}08`,
+                    transition: 'all 0.2s ease'
                   }}
                 >
                   <div style={{ fontSize: '1.25rem' }}>{item.icon}</div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 800, color: item.color }}>{helpCounters[item.key as keyof typeof helpCounters]}</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 800, color: item.color, lineHeight: 1 }}>{helpCounters[item.key as keyof typeof helpCounters]}</div>
                   <div style={{ fontSize: '0.625rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>{item.label}</div>
                 </button>
               ))}
