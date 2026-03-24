@@ -14,6 +14,7 @@ const NAV_ITEMS = [
   { path: '/',               icon: '📋', label: 'Tareas',         badge: (t: Tarea[]) => t.filter(x => x.estado !== 'cerrado' && x.prioridad === 'urgente').length },
   { path: '/auditoria',     icon: '📊', label: 'Auditoría',       badge: () => 0, external: true },
   { path: '/tv',             icon: '📺', label: 'Panel TV',        badge: () => 0, external: true },
+  { path: '/tablets',        icon: '📱', label: 'Tablets',          badge: () => 0 },
   { path: '/solicitud',      icon: '📝', label: 'Form Solicitud',  badge: () => 0, external: true },
   { path: '/configuracion', icon: '⚙️', label: 'Configuración',   badge: () => 0 },
 ]

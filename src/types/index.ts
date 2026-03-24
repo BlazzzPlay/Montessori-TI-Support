@@ -125,3 +125,21 @@ export interface Toast {
   type: ToastType
   message: string
 }
+// --- Reserva de Tablets ---
+export type TipoSolicitante = 'alumno' | 'profesor'
+export type EstadoReserva = 'reservado' | 'en_prestamo' | 'devuelto' | 'cancelado'
+
+export interface ReservaTablet {
+  id: string
+  solicitante_nombre: string
+  solicitante_tipo: TipoSolicitante
+  cantidad: number
+  curso: string
+  fecha_inicio: string
+  fecha_fin: string
+  fecha_entrega?: string
+  fecha_devolucion?: string
+  estado: EstadoReserva
+  notas?: string
+  created_at: string
+}

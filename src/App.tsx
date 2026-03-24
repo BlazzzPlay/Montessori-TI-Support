@@ -7,6 +7,7 @@ import { TVPage } from './pages/TVPage'
 import { AuditoriaPage } from './pages/AuditoriaPage'
 import { ConfiguracionPage } from './pages/ConfiguracionPage'
 import { SolicitudPage } from './pages/SolicitudPage'
+import { ReservaTabletsPage } from './pages/ReservaTabletsPage'
 import type { ReactNode } from 'react'
 
 // Route guard — redirects to /login if not authenticated
@@ -38,6 +39,7 @@ function AppRoutes() {
       <Route path="/solicitud" element={<SolicitudPage />} />
       {/* Rutas privadas */}
       <Route path="/" element={<PrivateRoute><TasksPage /></PrivateRoute>} />
+      <Route path="/tablets" element={<PrivateRoute><ReservaTabletsPage /></PrivateRoute>} />
       <Route path="/configuracion" element={<PrivateRoute><ConfiguracionPage /></PrivateRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
