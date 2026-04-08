@@ -170,7 +170,9 @@ export function AuditoriaPage() {
   const [showModal, setShowModal] = useState(false)
   const [selectedTareaId, setSelectedTareaId] = useState<string | undefined>()
   const selectedTarea = useMemo(() => tareas.find(t => t.id === selectedTareaId), [tareas, selectedTareaId])
-  const [nuevoComentarioNombre, setNuevoComentarioNombre] = useState('')
+  const [nuevoComentarioNombre, setNuevoComentarioNombre] = useState(
+    () => localStorage.getItem('blazz_gestor_nombre') || ''
+  )
   const [nuevoComentarioTexto, setNuevoComentarioTexto] = useState('')
 
   const handleAddComment = async () => {
@@ -181,12 +183,16 @@ export function AuditoriaPage() {
       tarea_id: selectedTarea.id,
       autor_nombre: nuevoComentarioNombre,
       contenido: nuevoComentarioTexto,
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
+      es_admin: false,         // Viene de Gestión (Auditoría)
+      leido_por_admin: false,  // Admin no ha visto este mensaje aún
     }
 
     const nuevosComentarios = [...(selectedTarea.comentarios || []), comment]
     await updateTarea(selectedTarea.id, { comentarios: nuevosComentarios })
     setNuevoComentarioTexto('')
+    // Guardar nombre en localStorage para no pedirlo en el próximo comentario
+    localStorage.setItem('blazz_gestor_nombre', nuevoComentarioNombre)
   }
 
   // Filtrar tareas que no deban mostrarse (a menos que ya estén completadas)
@@ -448,134 +454,128 @@ export function AuditoriaPage() {
       {/* Modal de Solo Lectura */}
       {showModal && selectedTarea && (
         <div className="modal-overlay" onClick={() => setShowModal(false)} style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ background: 'var(--bg-surface)', padding: '2rem', borderRadius: 'var(--radius-lg)', width: '100%', maxWidth: '600px', maxHeight: '90vh', overflowY: 'auto' }}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ background: 'var(--bg-surface)', padding: '2rem', borderRadius: 'var(--radius-lg)', width: '100%', maxWidth: '620px', maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
-               <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Detalles de Tarea</h2>
-               <button className="btn btn-ghost" onClick={() => setShowModal(false)}>✕</button>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Detalles de Tarea</h2>
+              <button className="btn btn-ghost" onClick={() => setShowModal(false)}>✕</button>
             </div>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-               <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Título</label>
-                  <div style={{ fontSize: '1rem', fontWeight: 600 }}>{selectedTarea.titulo}</div>
-               </div>
-               
-               {selectedTarea.descripcion && (
-                 <div>
-                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Descripción</label>
-                    <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', whiteSpace: 'pre-wrap', background: 'var(--bg-default)', padding: '0.75rem', borderRadius: 'var(--radius-md)' }}>{selectedTarea.descripcion}</div>
-                 </div>
-               )}
-               
-               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '1rem' }}>
-                  <div>
-                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Solicitante</label>
-                    <div style={{ fontSize: '0.875rem' }}>{selectedTarea.solicitante}</div>
-                  </div>
-                  <div>
-                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Ubicación</label>
-                    <div style={{ fontSize: '0.875rem' }}>{selectedTarea.ubicacion || '—'}</div>
-                  </div>
-                  <div>
-                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Prioridad</label>
-                    <div style={{ fontSize: '0.875rem', marginTop: '0.25rem' }}><span className={`priority-badge priority-${selectedTarea.prioridad}`}>{selectedTarea.prioridad}</span></div>
-                  </div>
-                  {selectedTarea.fecha_limite && (
-                    <div>
-                      <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Fecha Límite</label>
-                      <div style={{ fontSize: '0.875rem' }}>{formatDate(selectedTarea.fecha_limite)}</div>
-                    </div>
-                  )}
-               </div>
 
-               {selectedTarea.mostrar_progreso && selectedTarea.progreso !== undefined && (
-                 <div>
-                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.5rem', display: 'block' }}>Porcentaje de Avance</label>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                       <div style={{ flex: 1, height: '8px', background: 'var(--bg-default)', borderRadius: '99px', overflow: 'hidden' }}>
-                          <div style={{ height: '100%', width: `${selectedTarea.progreso}%`, background: 'var(--brand-500)', transition: 'width 0.3s' }} />
-                       </div>
-                       <span style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--brand-500)' }}>{selectedTarea.progreso}%</span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', marginBottom: '1.5rem' }}>
+              <div>
+                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Título</label>
+                <div style={{ fontSize: '1rem', fontWeight: 600 }}>{selectedTarea.titulo}</div>
+              </div>
+              {selectedTarea.descripcion && (
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Descripción</label>
+                  <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', whiteSpace: 'pre-wrap', background: 'var(--bg-default)', padding: '0.75rem', borderRadius: 'var(--radius-md)' }}>{selectedTarea.descripcion}</div>
+                </div>
+              )}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '1rem' }}>
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Solicitante</label>
+                  <div style={{ fontSize: '0.875rem' }}>{selectedTarea.solicitante}</div>
+                </div>
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Ubicación</label>
+                  <div style={{ fontSize: '0.875rem' }}>{selectedTarea.ubicacion || '—'}</div>
+                </div>
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Prioridad</label>
+                  <div style={{ fontSize: '0.875rem', marginTop: '0.25rem' }}><span className={`priority-badge priority-${selectedTarea.prioridad}`}>{selectedTarea.prioridad}</span></div>
+                </div>
+                {selectedTarea.fecha_limite && (
+                  <div>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Fecha Límite</label>
+                    <div style={{ fontSize: '0.875rem' }}>{formatDate(selectedTarea.fecha_limite)}</div>
+                  </div>
+                )}
+              </div>
+              {selectedTarea.mostrar_progreso && selectedTarea.progreso !== undefined && (
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.5rem', display: 'block' }}>Porcentaje de Avance</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <div style={{ flex: 1, height: '8px', background: 'var(--bg-default)', borderRadius: '99px', overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${selectedTarea.progreso}%`, background: 'var(--brand-500)', transition: 'width 0.3s' }} />
                     </div>
-                 </div>
-               )}
-
-               {selectedTarea.subtareas && selectedTarea.subtareas.length > 0 && (
-                 <div>
-                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.5rem', display: 'block' }}>Pasos / Check-list</label>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', background: 'var(--bg-default)', padding: '1rem', borderRadius: 'var(--radius-md)' }}>
-                       {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                       {selectedTarea.subtareas.map((sub: any) => (
-                         <div key={sub.id}>
-                           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
-                              <div style={{ color: sub.completada ? 'var(--brand-500)' : 'var(--text-muted)' }}>{sub.completada ? '☑' : '☐'}</div>
-                              <div style={{ fontSize: '0.875rem', color: sub.completada ? 'var(--text-muted)' : 'var(--text-primary)', textDecoration: sub.completada ? 'line-through' : 'none', fontWeight: 600 }}>
-                                 {sub.titulo}
+                    <span style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--brand-500)' }}>{selectedTarea.progreso}%</span>
+                  </div>
+                </div>
+              )}
+              {selectedTarea.subtareas && selectedTarea.subtareas.length > 0 && (
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.5rem', display: 'block' }}>Pasos / Check-list</label>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', background: 'var(--bg-default)', padding: '1rem', borderRadius: 'var(--radius-md)' }}>
+                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                    {selectedTarea.subtareas.map((sub: any) => (
+                      <div key={sub.id}>
+                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
+                          <div style={{ color: sub.completada ? 'var(--brand-500)' : 'var(--text-muted)' }}>{sub.completada ? '☑' : '☐'}</div>
+                          <div style={{ fontSize: '0.875rem', color: sub.completada ? 'var(--text-muted)' : 'var(--text-primary)', textDecoration: sub.completada ? 'line-through' : 'none', fontWeight: 600 }}>{sub.titulo}</div>
+                        </div>
+                        {sub.checklist && sub.checklist.length > 0 && (
+                          <div style={{ marginLeft: '1.5rem', marginTop: '0.35rem', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                            {sub.checklist.map((chk: any) => (
+                              <div key={chk.id} style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
+                                <div style={{ color: chk.completada ? 'var(--brand-500)' : 'var(--text-muted)', fontSize: '0.75rem' }}>{chk.completada ? '✓' : '-'}</div>
+                                <div style={{ fontSize: '0.8125rem', color: chk.completada ? 'var(--text-muted)' : 'var(--text-secondary)', textDecoration: chk.completada ? 'line-through' : 'none' }}>{chk.texto}</div>
                               </div>
-                           </div>
-                           {sub.checklist && sub.checklist.length > 0 && (
-                             <div style={{ marginLeft: '1.5rem', marginTop: '0.35rem', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-                               {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                               {sub.checklist.map((chk: any) => (
-                                 <div key={chk.id} style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
-                                    <div style={{ color: chk.completada ? 'var(--brand-500)' : 'var(--text-muted)', fontSize: '0.75rem' }}>{chk.completada ? '✓' : '-'}</div>
-                                    <div style={{ fontSize: '0.8125rem', color: chk.completada ? 'var(--text-muted)' : 'var(--text-secondary)', textDecoration: chk.completada ? 'line-through' : 'none' }}>
-                                       {chk.texto}
-                                    </div>
-                                 </div>
-                               ))}
-                             </div>
-                           )}
-                         </div>
-                       ))}
-                    </div>
-                 </div>
-               )}
-            </div>
-
-            {/* Comentarios Section */}
-            <div style={{ marginTop: '2rem', borderTop: '1px solid var(--border-subtle)', paddingTop: '1.5rem' }}>
-               <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  💬 Comentarios de Gestión <span style={{ fontSize: '0.8125rem', color: 'var(--brand-500)' }}>({selectedTarea.comentarios?.length || 0})</span>
-               </h3>
-
-               {/* Añadir Comentario Form */}
-               <div style={{ background: 'var(--bg-default)', padding: '1rem', borderRadius: 'var(--radius-md)', marginBottom: '1.5rem', border: '1px solid var(--border-subtle)' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                     <div>
-                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '4px', display: 'block' }}>Nombre (Obligatorio)</label>
-                        <input type="text" className="input" placeholder="Tu nombre..." value={nuevoComentarioNombre} onChange={e => setNuevoComentarioNombre(e.target.value)} />
-                     </div>
-                     <div>
-                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '4px', display: 'block' }}>Comentario</label>
-                        <textarea className="input" style={{ minHeight: '80px', resize: 'vertical' }} placeholder="Escribe tu consulta o instrucción para el equipo técnico..." value={nuevoComentarioTexto} onChange={e => setNuevoComentarioTexto(e.target.value)} />
-                     </div>
-                     <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.25rem' }}>
-                        <button className="btn btn-primary" onClick={handleAddComment} disabled={!nuevoComentarioNombre.trim() || !nuevoComentarioTexto.trim()}>
-                           Publicar Comentario
-                        </button>
-                     </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
                   </div>
-               </div>
-
-               {/* Lista de Comentarios */}
-               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  {(selectedTarea.comentarios || []).slice().reverse().map(c => (
-                     <div key={c.id} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-default)', padding: '1rem', borderRadius: 'var(--radius-md)' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem', gap: '1rem' }}>
-                           <span style={{ fontWeight: 800, color: 'var(--brand-500)', fontSize: '0.875rem' }}>{c.autor_nombre}</span>
-                           <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{formatDateTime(c.created_at)}</span>
-                        </div>
-                        <div style={{ fontSize: '0.875rem', color: 'var(--text-primary)', whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>
-                           {c.contenido}
-                        </div>
-                     </div>
-                  ))}
-               </div>
+                </div>
+              )}
             </div>
-            
-            <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid var(--border-subtle)', paddingTop: '1rem' }}>
-               <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Cerrar</button>
+
+            {/* Chat de Comentarios */}
+            <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <h3 style={{ fontSize: '1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
+                💬 Comentarios
+                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'white', background: 'var(--brand-500)', borderRadius: '99px', padding: '1px 7px' }}>
+                  {selectedTarea.comentarios?.length || 0}
+                </span>
+              </h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxHeight: '300px', overflowY: 'auto', background: 'var(--bg-default)', borderRadius: 'var(--radius-md)', padding: '1rem', border: '1px solid var(--border-subtle)' }}>
+                {(selectedTarea.comentarios || []).length === 0 && (
+                  <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem', padding: '2rem 0' }}>Sin comentarios aún. Sé el primero en escribir.</div>
+                )}
+                {(selectedTarea.comentarios || []).map(c => {
+                  const isAdm = c.es_admin
+                  return (
+                    <div key={c.id} style={{ display: 'flex', flexDirection: 'column', alignItems: isAdm ? 'flex-end' : 'flex-start' }}>
+                      <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', marginBottom: '3px', paddingLeft: isAdm ? 0 : '4px', paddingRight: isAdm ? '4px' : 0 }}>
+                        <strong style={{ color: isAdm ? 'var(--brand-500)' : '#10b981' }}>{c.autor_nombre}</strong>{' · '}{formatDateTime(c.created_at)}
+                      </div>
+                      <div style={{ maxWidth: '85%', padding: '0.625rem 0.875rem', borderRadius: isAdm ? '12px 12px 2px 12px' : '12px 12px 12px 2px', background: isAdm ? 'var(--brand-500)' : 'var(--bg-surface)', color: isAdm ? 'white' : 'var(--text-primary)', fontSize: '0.875rem', lineHeight: 1.5, whiteSpace: 'pre-wrap', border: isAdm ? 'none' : '1px solid var(--border-default)', boxShadow: '0 1px 3px rgba(0,0,0,0.12)' }}>
+                        {c.contenido}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+              <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-md)', padding: '0.875rem', display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+                {!nuevoComentarioNombre ? (
+                  <input type="text" className="input" placeholder="👤 Tu nombre (obligatorio)..." value={nuevoComentarioNombre} onChange={e => setNuevoComentarioNombre(e.target.value)} style={{ fontSize: '0.8125rem' }} />
+                ) : (
+                  <div style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span>👤 Comentando como: <strong>{nuevoComentarioNombre}</strong></span>
+                    <button className="btn btn-ghost" style={{ fontSize: '0.7rem', padding: '1px 6px' }} onClick={() => { setNuevoComentarioNombre(''); localStorage.removeItem('blazz_gestor_nombre') }}>Cambiar</button>
+                  </div>
+                )}
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-end' }}>
+                  <textarea className="input" style={{ flex: 1, minHeight: '60px', resize: 'none', fontSize: '0.875rem' }} placeholder="Escribe tu mensaje para el equipo técnico..." value={nuevoComentarioTexto} onChange={e => setNuevoComentarioTexto(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleAddComment() } }} />
+                  <button className="btn btn-primary" onClick={handleAddComment} disabled={!nuevoComentarioNombre.trim() || !nuevoComentarioTexto.trim()} style={{ alignSelf: 'flex-end', padding: '0.5rem 1rem' }}>Enviar</button>
+                </div>
+                <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>Enter para enviar · Shift+Enter para nueva línea</div>
+              </div>
+            </div>
+
+            <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid var(--border-subtle)', paddingTop: '1rem' }}>
+              <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Cerrar</button>
             </div>
           </div>
         </div>

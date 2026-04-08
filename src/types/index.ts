@@ -55,6 +55,8 @@ export interface Comentario {
   autor_nombre: string
   contenido: string
   created_at: string
+  es_admin?: boolean        // true = respuesta del equipo técnico/admin
+  leido_por_admin?: boolean // true = admin ya vio este mensaje
 }
 
 export interface TareaFormData {

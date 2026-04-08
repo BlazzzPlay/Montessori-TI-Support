@@ -52,7 +52,18 @@ export function TasksPage() {
   const solicitudes = tareas.filter(t => t.estado === 'solicitud').sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
 
   const openCreate = () => { setSelectedTareaId(undefined); setShowModal(true) }
-  const openEdit = (t: Tarea) => { setSelectedTareaId(t.id); setShowModal(true) }
+  const openEdit = (t: Tarea) => {
+    setSelectedTareaId(t.id)
+    setShowModal(true)
+    // Marcar todos los mensajes no-leídos como leídos al abrir
+    const tieneNoLeidos = (t.comentarios || []).some(c => !c.es_admin && !c.leido_por_admin)
+    if (tieneNoLeidos) {
+      const comentariosLeidos = (t.comentarios || []).map(c =>
+        !c.es_admin ? { ...c, leido_por_admin: true } : c
+      )
+      updateTarea(t.id, { comentarios: comentariosLeidos })
+    }
+  }
   const closeModal = () => { setShowModal(false); setSelectedTareaId(undefined) }
 
   const handleCreate = async (data: Parameters<typeof createTarea>[0]) => {

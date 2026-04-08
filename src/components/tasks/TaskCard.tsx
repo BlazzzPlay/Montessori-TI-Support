@@ -82,15 +82,19 @@ export function TaskCard({ tarea, onClick, compact = false }: TaskCardProps) {
                 📋 {tarea.subtareas.filter(s => s.completada).length}/{tarea.subtareas.length} pasos
               </span>
             )}
-            {tarea.comentarios && tarea.comentarios.length > 0 && (
-              <span style={{ 
-                display: 'inline-flex', padding: '2px 6px', borderRadius: '4px',
-                background: 'rgba(99, 102, 241, 0.08)', border: '1px solid rgba(99, 102, 241, 0.2)',
-                color: '#6366f1', fontWeight: 600, alignItems: 'center', gap: '3px'
-              }}>
-                💬 {tarea.comentarios.length}
-              </span>
-            )}
+            {tarea.comentarios && tarea.comentarios.length > 0 && (() => {
+              const noLeidos = tarea.comentarios.filter(c => !c.es_admin && !c.leido_por_admin).length
+              return (
+                <span style={{ 
+                  display: 'inline-flex', padding: '2px 6px', borderRadius: '4px',
+                  background: noLeidos > 0 ? 'rgba(239, 68, 68, 0.12)' : 'rgba(99, 102, 241, 0.08)',
+                  border: `1px solid ${noLeidos > 0 ? 'rgba(239, 68, 68, 0.35)' : 'rgba(99, 102, 241, 0.2)'}`,
+                  color: noLeidos > 0 ? '#ef4444' : '#6366f1', fontWeight: 700, alignItems: 'center', gap: '3px'
+                }}>
+                  {noLeidos > 0 ? '🔴' : '💬'} {tarea.comentarios.length}{noLeidos > 0 ? ` (+${noLeidos})` : ''}
+                </span>
+              )
+            })()}
           </div>
         </div>
       )}
