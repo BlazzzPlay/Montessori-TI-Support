@@ -191,8 +191,6 @@ export function AuditoriaPage() {
     const nuevosComentarios = [...(selectedTarea.comentarios || []), comment]
     await updateTarea(selectedTarea.id, { comentarios: nuevosComentarios })
     setNuevoComentarioTexto('')
-    // Guardar nombre en localStorage para no pedirlo en el próximo comentario
-    localStorage.setItem('blazz_gestor_nombre', nuevoComentarioNombre)
   }
 
   // Filtrar tareas que no deban mostrarse (a menos que ya estén completadas)
@@ -558,14 +556,18 @@ export function AuditoriaPage() {
                 })}
               </div>
               <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-md)', padding: '0.875rem', display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
-                {!nuevoComentarioNombre ? (
-                  <input type="text" className="input" placeholder="👤 Tu nombre (obligatorio)..." value={nuevoComentarioNombre} onChange={e => setNuevoComentarioNombre(e.target.value)} style={{ fontSize: '0.8125rem' }} />
-                ) : (
-                  <div style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span>👤 Comentando como: <strong>{nuevoComentarioNombre}</strong></span>
-                    <button className="btn btn-ghost" style={{ fontSize: '0.7rem', padding: '1px 6px' }} onClick={() => { setNuevoComentarioNombre(''); localStorage.removeItem('blazz_gestor_nombre') }}>Cambiar</button>
-                  </div>
-                )}
+                <input
+                  type="text"
+                  className="input"
+                  placeholder="👤 Tu nombre (obligatorio)..."
+                  value={nuevoComentarioNombre}
+                  onChange={e => {
+                    setNuevoComentarioNombre(e.target.value)
+                    if (e.target.value) localStorage.setItem('blazz_gestor_nombre', e.target.value)
+                    else localStorage.removeItem('blazz_gestor_nombre')
+                  }}
+                  style={{ fontSize: '0.8125rem' }}
+                />
                 <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-end' }}>
                   <textarea className="input" style={{ flex: 1, minHeight: '60px', resize: 'none', fontSize: '0.875rem' }} placeholder="Escribe tu mensaje para el equipo técnico..." value={nuevoComentarioTexto} onChange={e => setNuevoComentarioTexto(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleAddComment() } }} />
                   <button className="btn btn-primary" onClick={handleAddComment} disabled={!nuevoComentarioNombre.trim() || !nuevoComentarioTexto.trim()} style={{ alignSelf: 'flex-end', padding: '0.5rem 1rem' }}>Enviar</button>
