@@ -6,8 +6,8 @@ import {
 } from 'recharts'
 import { useTareas } from '../hooks/useTareas'
 import { useHelpCounters } from '../hooks/useHelpCounters'
-import { formatDate, formatDateTime, STATUS_LABELS, genId } from '../lib/utils'
-import type { Tarea, Comentario } from '../types'
+import { formatDate, formatDateTime, STATUS_LABELS } from '../lib/utils'
+import type { Tarea } from '../types'
 
 // ──────────────────────────────────────────────────
 // Helpers para derivar estadísticas desde tareas reales
@@ -161,7 +161,7 @@ function RenderTable({ lista, emptyIcon, emptyTitle, emptyDesc, totalTareas, onR
 // ──────────────────────────────────────────────────
 
 export function AuditoriaPage() {
-  const { tareas, loading, updateTarea } = useTareas()
+  const { tareas, loading } = useTareas()
   const { helpCounters } = useHelpCounters()
   
   const [dateFrom, setDateFrom] = useState('')
@@ -170,28 +170,6 @@ export function AuditoriaPage() {
   const [showModal, setShowModal] = useState(false)
   const [selectedTareaId, setSelectedTareaId] = useState<string | undefined>()
   const selectedTarea = useMemo(() => tareas.find(t => t.id === selectedTareaId), [tareas, selectedTareaId])
-  const [nuevoComentarioNombre, setNuevoComentarioNombre] = useState(
-    () => localStorage.getItem('blazz_gestor_nombre') || ''
-  )
-  const [nuevoComentarioTexto, setNuevoComentarioTexto] = useState('')
-
-  const handleAddComment = async () => {
-    if (!selectedTarea || !nuevoComentarioNombre.trim() || !nuevoComentarioTexto.trim()) return
-
-    const comment: Comentario = {
-      id: genId(),
-      tarea_id: selectedTarea.id,
-      autor_nombre: nuevoComentarioNombre,
-      contenido: nuevoComentarioTexto,
-      created_at: new Date().toISOString(),
-      es_admin: false,         // Viene de Gestión (Auditoría)
-      leido_por_admin: false,  // Admin no ha visto este mensaje aún
-    }
-
-    const nuevosComentarios = [...(selectedTarea.comentarios || []), comment]
-    await updateTarea(selectedTarea.id, { comentarios: nuevosComentarios })
-    setNuevoComentarioTexto('')
-  }
 
   // Filtrar tareas que no deban mostrarse (a menos que ya estén completadas)
   const visibleTareas = useMemo(() => {
@@ -527,53 +505,6 @@ export function AuditoriaPage() {
                   </div>
                 </div>
               )}
-            </div>
-
-            {/* Chat de Comentarios */}
-            <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <h3 style={{ fontSize: '1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
-                💬 Comentarios
-                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'white', background: 'var(--brand-500)', borderRadius: '99px', padding: '1px 7px' }}>
-                  {selectedTarea.comentarios?.length || 0}
-                </span>
-              </h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxHeight: '300px', overflowY: 'auto', background: 'var(--bg-default)', borderRadius: 'var(--radius-md)', padding: '1rem', border: '1px solid var(--border-subtle)' }}>
-                {(selectedTarea.comentarios || []).length === 0 && (
-                  <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem', padding: '2rem 0' }}>Sin comentarios aún. Sé el primero en escribir.</div>
-                )}
-                {(selectedTarea.comentarios || []).map(c => {
-                  const isAdm = c.es_admin
-                  return (
-                    <div key={c.id} style={{ display: 'flex', flexDirection: 'column', alignItems: isAdm ? 'flex-end' : 'flex-start' }}>
-                      <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', marginBottom: '3px', paddingLeft: isAdm ? 0 : '4px', paddingRight: isAdm ? '4px' : 0 }}>
-                        <strong style={{ color: isAdm ? 'var(--brand-500)' : '#10b981' }}>{c.autor_nombre}</strong>{' · '}{formatDateTime(c.created_at)}
-                      </div>
-                      <div style={{ maxWidth: '85%', padding: '0.625rem 0.875rem', borderRadius: isAdm ? '12px 12px 2px 12px' : '12px 12px 12px 2px', background: isAdm ? 'var(--brand-500)' : 'var(--bg-surface)', color: isAdm ? 'white' : 'var(--text-primary)', fontSize: '0.875rem', lineHeight: 1.5, whiteSpace: 'pre-wrap', border: isAdm ? 'none' : '1px solid var(--border-default)', boxShadow: '0 1px 3px rgba(0,0,0,0.12)' }}>
-                        {c.contenido}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-              <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-md)', padding: '0.875rem', display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
-                <input
-                  type="text"
-                  className="input"
-                  placeholder="👤 Tu nombre (obligatorio)..."
-                  value={nuevoComentarioNombre}
-                  onChange={e => {
-                    setNuevoComentarioNombre(e.target.value)
-                    if (e.target.value) localStorage.setItem('blazz_gestor_nombre', e.target.value)
-                    else localStorage.removeItem('blazz_gestor_nombre')
-                  }}
-                  style={{ fontSize: '0.8125rem' }}
-                />
-                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-end' }}>
-                  <textarea className="input" style={{ flex: 1, minHeight: '60px', resize: 'none', fontSize: '0.875rem' }} placeholder="Escribe tu mensaje para el equipo técnico..." value={nuevoComentarioTexto} onChange={e => setNuevoComentarioTexto(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleAddComment() } }} />
-                  <button className="btn btn-primary" onClick={handleAddComment} disabled={!nuevoComentarioNombre.trim() || !nuevoComentarioTexto.trim()} style={{ alignSelf: 'flex-end', padding: '0.5rem 1rem' }}>Enviar</button>
-                </div>
-                <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>Enter para enviar · Shift+Enter para nueva línea</div>
-              </div>
             </div>
 
             <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid var(--border-subtle)', paddingTop: '1rem' }}>

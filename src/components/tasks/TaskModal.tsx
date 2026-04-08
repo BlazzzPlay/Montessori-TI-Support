@@ -1,8 +1,8 @@
 import { useState, type FormEvent } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { TagBadge, PRIORIDAD_OPTIONS, ESTADO_OPTIONS } from '../ui/Badges'
-import { formatDateTime, genId } from '../../lib/utils'
-import type { Tarea, Etiqueta, TareaFormData, Comentario } from '../../types'
+import { formatDateTime } from '../../lib/utils'
+import type { Tarea, Etiqueta, TareaFormData } from '../../types'
 
 interface TaskModalProps {
   tarea?: Tarea
@@ -35,31 +35,6 @@ export function TaskModal({  tarea,
   const [error, setError] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(false)
 
-  const [nuevoComentarioTexto, setNuevoComentarioTexto] = useState('')
-
-  const handleAddComment = async (e: React.MouseEvent) => {
-    e.preventDefault()
-    if (!tarea || !onUpdate || !nuevoComentarioTexto.trim()) return
-    setLoading(true)
-    // Marcar todos los mensajes de gestión como leídos al responder
-    const comentariosActualizados = (tarea.comentarios || []).map(c =>
-      !c.es_admin ? { ...c, leido_por_admin: true } : c
-    )
-    const comment: Comentario = {
-      id: genId(),
-      tarea_id: tarea.id,
-      autor_nombre: 'Soporte Técnico',
-      contenido: nuevoComentarioTexto,
-      created_at: new Date().toISOString(),
-      es_admin: true,          // Respuesta del admin/técnico
-      leido_por_admin: true,
-    }
-    const nuevos = [...comentariosActualizados, comment]
-    // Optimistic / rely on upstream state
-    await onUpdate(tarea.id, { comentarios: nuevos })
-    setNuevoComentarioTexto('')
-    setLoading(false)
-  }
 
   const set = (key: keyof TareaFormData) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setForm(prev => ({ ...prev, [key]: e.target.value }))
@@ -426,79 +401,6 @@ export function TaskModal({  tarea,
                 </div>
               </div>
 
-              {/* Comentarios (Solo Edit) — Chat bidireccional */}
-              {isEdit && tarea && (
-                <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '1.25rem', marginTop: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  <h3 style={{ fontSize: '0.875rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
-                    💬 Comentarios de Gestión
-                    <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'white', background: 'var(--brand-500)', borderRadius: '99px', padding: '1px 7px' }}>
-                      {tarea.comentarios?.length || 0}
-                    </span>
-                    {(tarea.comentarios || []).some(c => !c.es_admin && !c.leido_por_admin) && (
-                      <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: 'white', background: '#ef4444', borderRadius: '99px', padding: '1px 7px', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                        🔴 {(tarea.comentarios || []).filter(c => !c.es_admin && !c.leido_por_admin).length} nuevos
-                      </span>
-                    )}
-                  </h3>
-
-                  <div style={{
-                    display: 'flex', flexDirection: 'column', gap: '0.75rem',
-                    maxHeight: '260px', overflowY: 'auto',
-                    background: 'var(--bg-default)', borderRadius: 'var(--radius-md)',
-                    padding: '0.875rem', border: '1px solid var(--border-subtle)'
-                  }}>
-                    {(tarea.comentarios || []).length === 0 && (
-                      <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8125rem', padding: '1.5rem 0' }}>Sin mensajes aún.</div>
-                    )}
-                    {(tarea.comentarios || []).map(c => {
-                      const isAdminMsg = c.es_admin
-                      return (
-                        <div key={c.id} style={{ display: 'flex', flexDirection: 'column', alignItems: isAdminMsg ? 'flex-end' : 'flex-start' }}>
-                          <div style={{ fontSize: '0.625rem', color: 'var(--text-muted)', marginBottom: '3px', paddingLeft: isAdminMsg ? 0 : '4px', paddingRight: isAdminMsg ? '4px' : 0 }}>
-                            <strong style={{ color: isAdminMsg ? 'var(--brand-500)' : '#10b981' }}>{c.autor_nombre}</strong>
-                            {' · '}{formatDateTime(c.created_at)}
-                            {!isAdminMsg && !c.leido_por_admin && (
-                              <span style={{ marginLeft: '4px', color: '#ef4444', fontWeight: 700 }}>● nuevo</span>
-                            )}
-                          </div>
-                          <div style={{
-                            maxWidth: '85%', padding: '0.5rem 0.75rem',
-                            borderRadius: isAdminMsg ? '10px 10px 2px 10px' : '10px 10px 10px 2px',
-                            background: isAdminMsg ? 'var(--brand-500)' : 'var(--bg-surface)',
-                            color: isAdminMsg ? 'white' : 'var(--text-primary)',
-                            fontSize: '0.8125rem', lineHeight: 1.5, whiteSpace: 'pre-wrap',
-                            border: isAdminMsg ? 'none' : '1px solid var(--border-default)',
-                            boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
-                          }}>
-                            {c.contenido}
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-
-                  <div style={{ background: 'var(--bg-hover)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', padding: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <div style={{ fontSize: '0.6875rem', color: 'var(--brand-500)', fontWeight: 700 }}>🛠 Respondiendo como Soporte Técnico</div>
-                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-end' }}>
-                      <textarea
-                        className="input"
-                        style={{ flex: 1, minHeight: '52px', resize: 'none', fontSize: '0.8125rem', padding: '0.5rem' }}
-                        placeholder="Escribe tu respuesta..."
-                        value={nuevoComentarioTexto}
-                        onChange={e => setNuevoComentarioTexto(e.target.value)}
-                        onKeyDown={e => {
-                          if (e.key === 'Enter' && !e.shiftKey) {
-                            e.preventDefault()
-                            handleAddComment(e as unknown as React.MouseEvent)
-                          }
-                        }}
-                      />
-                      <button type="button" className="btn btn-primary btn-sm" onClick={handleAddComment} disabled={loading || !nuevoComentarioTexto.trim()} style={{ alignSelf: 'flex-end', padding: '0.5rem 0.875rem' }}>Enviar</button>
-                    </div>
-                    <div style={{ fontSize: '0.625rem', color: 'var(--text-muted)' }}>Enter para enviar · Shift+Enter nueva línea</div>
-                  </div>
-                </div>
-              )}
 
               {error && (
                 <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 'var(--radius-md)', padding: '0.75rem', color: '#EF4444', fontSize: '0.875rem' }}>
