@@ -19,7 +19,13 @@ export function useTareas() {
     try {
       if (USE_MOCK) {
         await new Promise(r => setTimeout(r, 600)) // Simulate network
-        setTareas(MOCK_TAREAS)
+        const local = localStorage.getItem('blazz_mock_tareas')
+        if (local) {
+          setTareas(JSON.parse(local))
+        } else {
+          setTareas(MOCK_TAREAS)
+          localStorage.setItem('blazz_mock_tareas', JSON.stringify(MOCK_TAREAS))
+        }
         setEtiquetas(MOCK_ETIQUETAS)
         return
       }
@@ -57,7 +63,11 @@ export function useTareas() {
           created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
           etiquetas: etiquetas.filter(e => form.etiqueta_ids.includes(e.id))
         }
-        setTareas(prev => [nueva, ...prev])
+        setTareas(prev => {
+          const newState = [nueva, ...prev]
+          localStorage.setItem('blazz_mock_tareas', JSON.stringify(newState))
+          return newState
+        })
         return {}
       }
       const { data, error } = await insforge.database.from('tareas').insert([{
@@ -88,7 +98,11 @@ export function useTareas() {
   const updateTarea = useCallback(async (id: string, updates: any): Promise<{ error?: string }> => {
     try {
       if (USE_MOCK) {
-        setTareas(prev => prev.map(t => t.id === id ? { ...t, ...updates, updated_at: new Date().toISOString() } : t))
+        setTareas(prev => {
+          const newState = prev.map(t => t.id === id ? { ...t, ...updates, updated_at: new Date().toISOString() } : t)
+          localStorage.setItem('blazz_mock_tareas', JSON.stringify(newState))
+          return newState
+        })
         return {}
       }
 
@@ -120,7 +134,11 @@ export function useTareas() {
   const deleteTarea = useCallback(async (id: string): Promise<{ error?: string }> => {
     try {
       if (USE_MOCK) {
-        setTareas(prev => prev.filter(t => t.id !== id))
+        setTareas(prev => {
+          const newState = prev.filter(t => t.id !== id)
+          localStorage.setItem('blazz_mock_tareas', JSON.stringify(newState))
+          return newState
+        })
         return {}
       }
       const { error } = await insforge.database.from('tareas').delete().eq('id', id)

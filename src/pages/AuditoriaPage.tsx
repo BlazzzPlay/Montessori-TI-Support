@@ -6,8 +6,8 @@ import {
 } from 'recharts'
 import { useTareas } from '../hooks/useTareas'
 import { useHelpCounters } from '../hooks/useHelpCounters'
-import { formatDate, formatDateTime } from '../lib/utils'
-import type { Tarea } from '../types'
+import { formatDate, formatDateTime, STATUS_LABELS, genId } from '../lib/utils'
+import type { Tarea, Comentario } from '../types'
 
 // ──────────────────────────────────────────────────
 // Helpers para derivar estadísticas desde tareas reales
@@ -91,28 +91,132 @@ const PieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) 
   return <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" fontSize={12} fontWeight={700}>{`${(percent * 100).toFixed(0)}%`}</text>
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function RenderTable({ lista, emptyIcon, emptyTitle, emptyDesc, totalTareas, onRowClick }: { lista: Tarea[], emptyIcon: string, emptyTitle: string, emptyDesc: string, totalTareas: number, onRowClick?: (t: Tarea) => void }) {
+  return (
+    <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
+      <div style={{ overflowX: 'auto' }}>
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Tarea</th>
+              <th>Prioridad</th>
+              <th>Estado</th>
+              <th>Solicitante</th>
+              <th>Ubicación</th>
+              <th>Creada</th>
+              <th>Actualizada</th>
+            </tr>
+          </thead>
+          <tbody>
+            {lista.map((t: Tarea) => {
+              return (
+                <tr key={t.id} onClick={onRowClick ? () => onRowClick(t) : undefined} style={{ cursor: onRowClick ? 'pointer' : 'default', transition: 'background 0.2s' }} className={onRowClick ? 'hoverable-row' : ''}>
+                  <td>
+                    <div style={{ fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-primary)' }}>{t.titulo}</div>
+                    <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 4, alignItems: 'center' }}>
+                      {t.etiquetas?.map(e => (
+                        <span key={e.id} style={{ fontSize: '0.625rem', padding: '1px 6px', borderRadius: 99, background: `${e.color}18`, color: e.color, border: `1px solid ${e.color}35`, fontWeight: 600 }}>
+                          {e.nombre}
+                        </span>
+                      ))}
+                      {(t.comentarios?.length || 0) > 0 && (
+                        <span style={{ fontSize: '0.625rem', padding: '1px 6px', borderRadius: 99, background: `rgba(99, 102, 241, 0.1)`, color: '#6366f1', border: `1px solid rgba(99, 102, 241, 0.3)`, fontWeight: 700, display: 'flex', alignItems: 'center', gap: '3px' }}>
+                           💬 {t.comentarios?.length}
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                  <td><span className={`priority-badge priority-${t.prioridad}`}>{t.prioridad}</span></td>
+                  <td><span className={`status-badge status-${t.estado}`}>{STATUS_LABELS[t.estado]}</span></td>
+                  <td style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>{t.solicitante}</td>
+                  <td style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>{t.ubicacion ?? '—'}</td>
+                  <td style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{formatDate(t.created_at)}</td>
+                  <td style={{ fontSize: '0.8125rem', color: 'var(--priority-baja)', whiteSpace: 'nowrap' }}>
+                    {t.resuelto_at ? formatDateTime(t.resuelto_at) : formatDate(t.updated_at)}
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+        {lista.length === 0 && (
+          <div className="empty-state">
+            <div className="empty-state-icon">{emptyIcon}</div>
+            <div className="empty-state-title">{emptyTitle}</div>
+            <div className="empty-state-desc">
+              {totalTareas === 0
+                ? 'Aún no hay tareas en el sistema.'
+                : emptyDesc}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ──────────────────────────────────────────────────
 // Página principal
 // ──────────────────────────────────────────────────
 
 export function AuditoriaPage() {
-  const { tareas, loading } = useTareas()
-  const { helpCounters, incrementCounter } = useHelpCounters()
+  const { tareas, loading, updateTarea } = useTareas()
+  const { helpCounters } = useHelpCounters()
+  
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
+  const [tabResueltas, setTabResueltas] = useState<'mes' | 'anio'>('mes')
+  const [showModal, setShowModal] = useState(false)
+  const [selectedTareaId, setSelectedTareaId] = useState<string | undefined>()
+  const selectedTarea = useMemo(() => tareas.find(t => t.id === selectedTareaId), [tareas, selectedTareaId])
+  const [nuevoComentarioNombre, setNuevoComentarioNombre] = useState('')
+  const [nuevoComentarioTexto, setNuevoComentarioTexto] = useState('')
+
+  const handleAddComment = async () => {
+    if (!selectedTarea || !nuevoComentarioNombre.trim() || !nuevoComentarioTexto.trim()) return
+
+    const comment: Comentario = {
+      id: genId(),
+      tarea_id: selectedTarea.id,
+      autor_nombre: nuevoComentarioNombre,
+      contenido: nuevoComentarioTexto,
+      created_at: new Date().toISOString()
+    }
+
+    const nuevosComentarios = [...(selectedTarea.comentarios || []), comment]
+    await updateTarea(selectedTarea.id, { comentarios: nuevosComentarios })
+    setNuevoComentarioTexto('')
+  }
 
   // Filtrar tareas que no deban mostrarse (a menos que ya estén completadas)
   const visibleTareas = useMemo(() => {
     return tareas.filter(t => t.mostrar_auditoria !== false || t.estado === 'resuelto' || t.estado === 'cerrado')
   }, [tareas])
 
-  // Tareas resueltas filtradas por rango de fecha
-  const resueltas = useMemo(() => {
-    let res = visibleTareas.filter(t => t.estado === 'resuelto' || t.estado === 'cerrado')
+  // Tareas filtradas por rango de fecha
+  const tareasFiltradas = useMemo(() => {
+    let res = visibleTareas;
     if (dateFrom) res = res.filter(t => new Date(t.resuelto_at ?? t.updated_at) >= new Date(dateFrom))
     if (dateTo)   res = res.filter(t => new Date(t.resuelto_at ?? t.updated_at) <= new Date(dateTo + 'T23:59:59'))
     return res.sort((a, b) => new Date(b.resuelto_at ?? b.updated_at).getTime() - new Date(a.resuelto_at ?? a.updated_at).getTime())
   }, [visibleTareas, dateFrom, dateTo])
+
+  const tareasPendientes = useMemo(() => visibleTareas.filter(t => t.estado === 'pendiente' || t.estado === 'en_progreso'), [visibleTareas])
+  const tareasResueltas = useMemo(() => tareasFiltradas.filter(t => t.estado === 'resuelto' || t.estado === 'cerrado'), [tareasFiltradas])
+
+  const currentMonth = new Date().getMonth()
+  const currentYear = new Date().getFullYear()
+
+  const tareasResueltasMes = useMemo(() => tareasResueltas.filter(t => {
+      const d = new Date(t.resuelto_at ?? t.updated_at)
+      return d.getMonth() === currentMonth && d.getFullYear() === currentYear
+  }), [tareasResueltas, currentMonth, currentYear])
+
+  const tareasResueltasAnio = useMemo(() => tareasResueltas.filter(t => {
+      const d = new Date(t.resuelto_at ?? t.updated_at)
+      return d.getFullYear() === currentYear
+  }), [tareasResueltas, currentYear])
 
   // Stats y gráficos calculados desde datos reales (todas las tareas visibles, no solo el filtro)
   const stats        = useMemo(() => calcStats(visibleTareas), [visibleTareas])
@@ -121,7 +225,7 @@ export function AuditoriaPage() {
 
   const handleExport = () => {
     const headers = ['ID', 'Título', 'Solicitante', 'Ubicación', 'Prioridad', 'Estado', 'Creada', 'Resuelta']
-    const rows = resueltas.map(t => [
+    const rows = tareasFiltradas.map(t => [
       t.id, t.titulo, t.solicitante, t.ubicacion ?? '', t.prioridad, t.estado,
       new Date(t.created_at).toLocaleString('es-CL'),
       t.resuelto_at ? new Date(t.resuelto_at).toLocaleString('es-CL') : new Date(t.updated_at).toLocaleString('es-CL')
@@ -160,63 +264,93 @@ export function AuditoriaPage() {
               Estadísticas calculadas en tiempo real · {visibleTareas.length} tareas procesadas
             </p>
           </div>
-          <button className="btn btn-secondary" onClick={handleExport} id="export-btn">
-            📥 Exportar CSV
-          </button>
+          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+            <button className="btn btn-primary" onClick={() => window.open('/solicitud', '_blank')} id="new-task-btn">
+              + Nueva Tarea
+            </button>
+            <button className="btn btn-secondary" onClick={handleExport} id="export-btn">
+              📥 Exportar CSV
+            </button>
+          </div>
         </div>
 
-        {/* KPIs — todos calculados desde datos reales */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="kpi-grid">
-          <div className="kpi-card">
-            <div className="kpi-value" style={{ color: 'var(--brand-500)' }}>{stats.totalResueltas}</div>
-            <div className="kpi-label">Total resueltas</div>
-            <div className={`kpi-trend ${stats.pct >= 0 ? 'trend-up' : 'trend-down'}`}>
-              {stats.pct >= 0 ? '↑' : '↓'} {Math.abs(stats.pct)}% vs semana anterior
+        {/* KPIs Minimalistas */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          style={{ 
+            display: 'flex', gap: '1.5rem', flexWrap: 'wrap', marginBottom: '2rem', 
+            background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-lg)', padding: '1.25rem'
+          }}
+        >
+          {/* Total Resueltas (Año/Mes) */}
+          <div style={{ flex: '1 1 220px', display: 'flex', flexDirection: 'column', paddingRight: '1.5rem', borderRight: '1px solid var(--border-subtle)' }}>
+            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Total Resueltas</div>
+            <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'baseline', marginBottom: '0.25rem' }}>
+              <div>
+                 <span style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--brand-500)', lineHeight: '1' }}>{tareasResueltasAnio.length}</span>
+                 <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginLeft: '4px', textTransform: 'uppercase' }}>año</span>
+              </div>
+              <div>
+                 <span style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--brand-500)', lineHeight: '1' }}>{tareasResueltasMes.length}</span>
+                 <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginLeft: '4px', textTransform: 'uppercase' }}>mes</span>
+              </div>
+            </div>
+            <div className={`kpi-trend ${stats.pct >= 0 ? 'trend-up' : 'trend-down'}`} style={{ marginTop: 'auto' }}>
+              {stats.pct >= 0 ? '↑' : '↓'} {Math.abs(stats.pct)}% vs sem. ant.
             </div>
           </div>
-          <div className="kpi-card">
-            <div className="kpi-value" style={{ color: 'var(--priority-urgente)' }}>
+
+          {/* Activas Ahora */}
+          <div style={{ flex: '1 1 180px', display: 'flex', flexDirection: 'column', paddingRight: '1.5rem', borderRight: '1px solid var(--border-subtle)' }}>
+            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Activas Ahora</div>
+            <div style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--priority-urgente)', lineHeight: '1', marginBottom: '0.25rem' }}>
               {visibleTareas.filter(t => t.estado !== 'cerrado' && t.estado !== 'resuelto').length}
             </div>
-            <div className="kpi-label">Activas ahora</div>
-            <div className="kpi-trend" style={{ color: 'var(--text-muted)' }}>
-              {visibleTareas.filter(t => t.prioridad === 'urgente' && t.estado === 'pendiente').length} urgentes pendientes
+            <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: 'auto', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <span style={{ color: 'var(--priority-urgente)' }}>🔴</span> {visibleTareas.filter(t => t.prioridad === 'urgente' && t.estado === 'pendiente').length} urgentes pend.
             </div>
           </div>
-          
-          {/* Contadores de Ayuda Mensuales */}
-          <div className="kpi-card" style={{ gridColumn: 'span 2', display: 'flex', flexDirection: 'column', gap: '1rem', padding: '1.25rem' }}>
-            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+
+          {/* Tareas Rápidas (Compactas) */}
+          <div style={{ flex: '2 1 300px', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <span>⚡</span> Tareas Rápidas (Mensual)
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.75rem' }}>
+            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginTop: 'auto' }}>
               {[
                 { key: 'apoderados', label: 'Apoderados', color: '#3B82F6', icon: '👨‍👩‍👧‍👦' },
                 { key: 'alumnos', label: 'Alumnos', color: '#10B981', icon: '🎓' },
                 { key: 'profesores', label: 'Profesores', color: '#F59E0B', icon: '👨‍🏫' },
-                { key: 'administrativos', label: 'Administrativos', color: '#6366F1', icon: '🏢' }
+                { key: 'administrativos', label: 'Admin', color: '#6366F1', icon: '🏢' }
               ].map(item => (
-                <button
-                  key={item.key}
-                  className="btn btn-secondary"
-                  onClick={() => incrementCounter(item.key)}
-                  style={{
-                    height: 'auto', display: 'flex', flexDirection: 'column', gap: '4px',
-                    padding: '12px 8px', border: `1px solid ${item.color}30`, background: `${item.color}08`,
-                    transition: 'all 0.2s ease'
-                  }}
-                >
-                  <div style={{ fontSize: '1.25rem' }}>{item.icon}</div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 800, color: item.color, lineHeight: 1 }}>{helpCounters[item.key as keyof typeof helpCounters]}</div>
-                  <div style={{ fontSize: '0.625rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>{item.label}</div>
-                </button>
+                <div key={item.key} style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', padding: '0.25rem 0.6rem', background: `${item.color}10`, border: `1px solid ${item.color}30`, borderRadius: '99px' }}>
+                  <span style={{ fontSize: '1rem' }}>{item.icon}</span>
+                  <span style={{ fontSize: '1rem', fontWeight: 800, color: item.color }}>{helpCounters[item.key as keyof typeof helpCounters]}</span>
+                  <span style={{ fontSize: '0.625rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)' }}>{item.label}</span>
+                </div>
               ))}
             </div>
           </div>
         </motion.div>
 
+        {/* Tareas Pendientes (Movidas arriba para mayor visibilidad) */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} style={{ marginBottom: '2rem' }}>
+          <h2 style={{ fontSize: '1.125rem', fontWeight: 700, marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            ⏳ Tareas Pendientes <span style={{ fontSize: '0.8125rem', fontWeight: 400, color: 'var(--text-muted)' }}>({tareasPendientes.length})</span>
+          </h2>
+          <RenderTable 
+            lista={tareasPendientes} 
+            totalTareas={tareas.length}
+            emptyIcon="⏳"
+            emptyTitle="No hay tareas pendientes"
+            emptyDesc="No se encontraron tareas en proceso."
+            onRowClick={t => { setSelectedTareaId(t.id); setShowModal(true) }}
+          />
+        </motion.div>
+
         {/* Gráficos */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="charts-grid" style={{ marginBottom: '1.5rem' }}>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="charts-grid" style={{ marginBottom: '2rem' }}>
 
           {/* Pie — por etiqueta */}
           <div className="chart-card">
@@ -258,11 +392,17 @@ export function AuditoriaPage() {
 
         {/* Tabla de historial */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-            <h2 style={{ fontSize: '1rem', fontWeight: 700 }}>
-              🗒 Historial de Tareas Resueltas
-              <span style={{ fontSize: '0.8125rem', fontWeight: 400, color: 'var(--text-muted)', marginLeft: '0.5rem' }}>({resueltas.length})</span>
-            </h2>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+              <h2 style={{ fontSize: '1rem', fontWeight: 700 }}>
+                🗒 Historial de Resoluciones
+              </h2>
+              <div className="tabs">
+                <button className={`tab ${tabResueltas === 'mes' ? 'active' : ''}`} onClick={() => setTabResueltas('mes')}>📆 Mes en curso ({tareasResueltasMes.length})</button>
+                <button className={`tab ${tabResueltas === 'anio' ? 'active' : ''}`} onClick={() => setTabResueltas('anio')}>📅 Año en curso ({tareasResueltasAnio.length})</button>
+              </div>
+            </div>
+            
             <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
               <label style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>Desde:</label>
               <input type="date" className="input" style={{ width: 'auto', padding: '0.35rem 0.625rem', fontSize: '0.8125rem' }} value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
@@ -272,61 +412,174 @@ export function AuditoriaPage() {
             </div>
           </div>
 
-          <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
-            <div style={{ overflowX: 'auto' }}>
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Tarea</th>
-                    <th>Prioridad</th>
-                    <th>Solicitante</th>
-                    <th>Ubicación</th>
-                    <th>Creada</th>
-                    <th>Resuelta</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {resueltas.map((t: Tarea) => {
-                    return (
-                      <tr key={t.id}>
-                        <td>
-                          <div style={{ fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-primary)' }}>{t.titulo}</div>
-                          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 2 }}>
-                            {t.etiquetas?.map(e => (
-                              <span key={e.id} style={{ fontSize: '0.625rem', padding: '1px 5px', borderRadius: 99, background: `${e.color}18`, color: e.color, border: `1px solid ${e.color}35`, fontWeight: 600 }}>
-                                {e.nombre}
-                              </span>
-                            ))}
-                          </div>
-                        </td>
-                        <td><span className={`priority-badge priority-${t.prioridad}`}>{t.prioridad}</span></td>
-                        <td style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>{t.solicitante}</td>
-                        <td style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>{t.ubicacion ?? '—'}</td>
-                        <td style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{formatDate(t.created_at)}</td>
-                        <td style={{ fontSize: '0.8125rem', color: 'var(--priority-baja)', whiteSpace: 'nowrap' }}>
-                          {t.resuelto_at ? formatDateTime(t.resuelto_at) : formatDate(t.updated_at)}
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-              {resueltas.length === 0 && (
-                <div className="empty-state">
-                  <div className="empty-state-icon">📊</div>
-                  <div className="empty-state-title">Sin tareas resueltas en este período</div>
-                  <div className="empty-state-desc">
-                    {tareas.length === 0
-                      ? 'Aún no hay tareas en el sistema.'
-                      : 'Ajusta el rango de fechas o resuelve algunas tareas primero.'}
-                  </div>
-                </div>
-              )}
-            </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+            
+            {tabResueltas === 'mes' && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                <RenderTable 
+                  lista={tareasResueltasMes} 
+                  totalTareas={tareas.length}
+                  emptyIcon="📆"
+                  emptyTitle="No hay tareas resueltas este mes"
+                  emptyDesc="Ajusta el rango de fechas o espera a que se resuelvan tareas."
+                  onRowClick={t => { setSelectedTareaId(t.id); setShowModal(true) }}
+                />
+              </motion.div>
+            )}
+
+            {tabResueltas === 'anio' && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                <RenderTable 
+                  lista={tareasResueltasAnio} 
+                  totalTareas={tareas.length}
+                  emptyIcon="📅"
+                  emptyTitle="No hay tareas resueltas este año"
+                  emptyDesc="Ajusta el rango de fechas o espera a que se resuelvan tareas."
+                  onRowClick={t => { setSelectedTareaId(t.id); setShowModal(true) }}
+                />
+              </motion.div>
+            )}
+
           </div>
         </motion.div>
       </div>
       </main>
+
+      {/* Modal de Solo Lectura */}
+      {showModal && selectedTarea && (
+        <div className="modal-overlay" onClick={() => setShowModal(false)} style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ background: 'var(--bg-surface)', padding: '2rem', borderRadius: 'var(--radius-lg)', width: '100%', maxWidth: '600px', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
+               <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Detalles de Tarea</h2>
+               <button className="btn btn-ghost" onClick={() => setShowModal(false)}>✕</button>
+            </div>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+               <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Título</label>
+                  <div style={{ fontSize: '1rem', fontWeight: 600 }}>{selectedTarea.titulo}</div>
+               </div>
+               
+               {selectedTarea.descripcion && (
+                 <div>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Descripción</label>
+                    <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', whiteSpace: 'pre-wrap', background: 'var(--bg-default)', padding: '0.75rem', borderRadius: 'var(--radius-md)' }}>{selectedTarea.descripcion}</div>
+                 </div>
+               )}
+               
+               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '1rem' }}>
+                  <div>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Solicitante</label>
+                    <div style={{ fontSize: '0.875rem' }}>{selectedTarea.solicitante}</div>
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Ubicación</label>
+                    <div style={{ fontSize: '0.875rem' }}>{selectedTarea.ubicacion || '—'}</div>
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Prioridad</label>
+                    <div style={{ fontSize: '0.875rem', marginTop: '0.25rem' }}><span className={`priority-badge priority-${selectedTarea.prioridad}`}>{selectedTarea.prioridad}</span></div>
+                  </div>
+                  {selectedTarea.fecha_limite && (
+                    <div>
+                      <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Fecha Límite</label>
+                      <div style={{ fontSize: '0.875rem' }}>{formatDate(selectedTarea.fecha_limite)}</div>
+                    </div>
+                  )}
+               </div>
+
+               {selectedTarea.mostrar_progreso && selectedTarea.progreso !== undefined && (
+                 <div>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.5rem', display: 'block' }}>Porcentaje de Avance</label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                       <div style={{ flex: 1, height: '8px', background: 'var(--bg-default)', borderRadius: '99px', overflow: 'hidden' }}>
+                          <div style={{ height: '100%', width: `${selectedTarea.progreso}%`, background: 'var(--brand-500)', transition: 'width 0.3s' }} />
+                       </div>
+                       <span style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--brand-500)' }}>{selectedTarea.progreso}%</span>
+                    </div>
+                 </div>
+               )}
+
+               {selectedTarea.subtareas && selectedTarea.subtareas.length > 0 && (
+                 <div>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.5rem', display: 'block' }}>Pasos / Check-list</label>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', background: 'var(--bg-default)', padding: '1rem', borderRadius: 'var(--radius-md)' }}>
+                       {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                       {selectedTarea.subtareas.map((sub: any) => (
+                         <div key={sub.id}>
+                           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
+                              <div style={{ color: sub.completada ? 'var(--brand-500)' : 'var(--text-muted)' }}>{sub.completada ? '☑' : '☐'}</div>
+                              <div style={{ fontSize: '0.875rem', color: sub.completada ? 'var(--text-muted)' : 'var(--text-primary)', textDecoration: sub.completada ? 'line-through' : 'none', fontWeight: 600 }}>
+                                 {sub.titulo}
+                              </div>
+                           </div>
+                           {sub.checklist && sub.checklist.length > 0 && (
+                             <div style={{ marginLeft: '1.5rem', marginTop: '0.35rem', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                               {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                               {sub.checklist.map((chk: any) => (
+                                 <div key={chk.id} style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
+                                    <div style={{ color: chk.completada ? 'var(--brand-500)' : 'var(--text-muted)', fontSize: '0.75rem' }}>{chk.completada ? '✓' : '-'}</div>
+                                    <div style={{ fontSize: '0.8125rem', color: chk.completada ? 'var(--text-muted)' : 'var(--text-secondary)', textDecoration: chk.completada ? 'line-through' : 'none' }}>
+                                       {chk.texto}
+                                    </div>
+                                 </div>
+                               ))}
+                             </div>
+                           )}
+                         </div>
+                       ))}
+                    </div>
+                 </div>
+               )}
+            </div>
+
+            {/* Comentarios Section */}
+            <div style={{ marginTop: '2rem', borderTop: '1px solid var(--border-subtle)', paddingTop: '1.5rem' }}>
+               <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  💬 Comentarios de Gestión <span style={{ fontSize: '0.8125rem', color: 'var(--brand-500)' }}>({selectedTarea.comentarios?.length || 0})</span>
+               </h3>
+
+               {/* Añadir Comentario Form */}
+               <div style={{ background: 'var(--bg-default)', padding: '1rem', borderRadius: 'var(--radius-md)', marginBottom: '1.5rem', border: '1px solid var(--border-subtle)' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                     <div>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '4px', display: 'block' }}>Nombre (Obligatorio)</label>
+                        <input type="text" className="input" placeholder="Tu nombre..." value={nuevoComentarioNombre} onChange={e => setNuevoComentarioNombre(e.target.value)} />
+                     </div>
+                     <div>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '4px', display: 'block' }}>Comentario</label>
+                        <textarea className="input" style={{ minHeight: '80px', resize: 'vertical' }} placeholder="Escribe tu consulta o instrucción para el equipo técnico..." value={nuevoComentarioTexto} onChange={e => setNuevoComentarioTexto(e.target.value)} />
+                     </div>
+                     <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.25rem' }}>
+                        <button className="btn btn-primary" onClick={handleAddComment} disabled={!nuevoComentarioNombre.trim() || !nuevoComentarioTexto.trim()}>
+                           Publicar Comentario
+                        </button>
+                     </div>
+                  </div>
+               </div>
+
+               {/* Lista de Comentarios */}
+               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  {(selectedTarea.comentarios || []).slice().reverse().map(c => (
+                     <div key={c.id} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-default)', padding: '1rem', borderRadius: 'var(--radius-md)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem', gap: '1rem' }}>
+                           <span style={{ fontWeight: 800, color: 'var(--brand-500)', fontSize: '0.875rem' }}>{c.autor_nombre}</span>
+                           <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{formatDateTime(c.created_at)}</span>
+                        </div>
+                        <div style={{ fontSize: '0.875rem', color: 'var(--text-primary)', whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>
+                           {c.contenido}
+                        </div>
+                     </div>
+                  ))}
+               </div>
+            </div>
+            
+            <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid var(--border-subtle)', paddingTop: '1rem' }}>
+               <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Cerrar</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

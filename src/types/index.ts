@@ -33,6 +33,7 @@ export interface Tarea {
   progreso?: number // 0-100
   mostrar_progreso?: boolean
   subtareas?: Subtarea[]
+  comentarios?: Comentario[]
 }
 
 export interface Subtarea {
@@ -51,7 +52,7 @@ export interface ChecklistItem {
 export interface Comentario {
   id: string
   tarea_id: string
-  autor_id?: string
+  autor_nombre: string
   contenido: string
   created_at: string
 }

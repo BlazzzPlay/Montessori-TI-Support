@@ -25,7 +25,8 @@ export function TasksPage() {
   const { addToast } = useToast()
 
   const [view, setView] = useState<ViewMode>('kanban')
-  const [selectedTarea, setSelectedTarea] = useState<Tarea | undefined>()
+  const [selectedTareaId, setSelectedTareaId] = useState<string | undefined>()
+  const selectedTarea = useMemo(() => tareas.find(t => t.id === selectedTareaId), [tareas, selectedTareaId])
   const [showModal, setShowModal] = useState(false)
   const [searchText, setSearchText] = useState('')
   const [filterPrioridad, setFilterPrioridad] = useState<Prioridad | 'all'>('all')
@@ -50,9 +51,9 @@ export function TasksPage() {
   const byStatus = (estado: EstadoTarea) => filtered.filter(t => t.estado === estado)
   const solicitudes = tareas.filter(t => t.estado === 'solicitud').sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
 
-  const openCreate = () => { setSelectedTarea(undefined); setShowModal(true) }
-  const openEdit = (t: Tarea) => { setSelectedTarea(t); setShowModal(true) }
-  const closeModal = () => { setShowModal(false); setSelectedTarea(undefined) }
+  const openCreate = () => { setSelectedTareaId(undefined); setShowModal(true) }
+  const openEdit = (t: Tarea) => { setSelectedTareaId(t.id); setShowModal(true) }
+  const closeModal = () => { setShowModal(false); setSelectedTareaId(undefined) }
 
   const handleCreate = async (data: Parameters<typeof createTarea>[0]) => {
     const res = await createTarea(data)
@@ -241,7 +242,14 @@ export function TasksPage() {
                   {filtered.map(t => (
                     <tr key={t.id} onClick={() => openEdit(t)} style={{ cursor: 'pointer' }}>
                       <td>
-                        <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.875rem' }}>{t.titulo}</div>
+                        <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.875rem', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '0.4rem' }}>
+                          {t.titulo}
+                          {(t.comentarios?.length || 0) > 0 && (
+                            <span style={{ fontSize: '0.625rem', padding: '1px 5px', borderRadius: 99, background: `rgba(99, 102, 241, 0.1)`, color: '#6366f1', border: `1px solid rgba(99, 102, 241, 0.3)`, fontWeight: 700, display: 'flex', alignItems: 'center', gap: '2px' }}>
+                               💬 {t.comentarios?.length}
+                            </span>
+                          )}
+                        </div>
                         {t.descripcion && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>{t.descripcion.slice(0,60)}…</div>}
                       </td>
                       <td><span className={`priority-badge priority-${t.prioridad}`}>{t.prioridad}</span></td>

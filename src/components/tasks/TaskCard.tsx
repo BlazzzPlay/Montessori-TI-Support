@@ -72,8 +72,8 @@ export function TaskCard({ tarea, onClick, compact = false }: TaskCardProps) {
             </div>
           )}
 
-          {tarea.subtareas && tarea.subtareas.length > 0 && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '6px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+            {tarea.subtareas && tarea.subtareas.length > 0 && (
               <span style={{ 
                 display: 'inline-flex', padding: '2px 6px', borderRadius: '4px',
                 background: 'var(--bg-hover)', border: '1px solid var(--border-default)',
@@ -81,8 +81,17 @@ export function TaskCard({ tarea, onClick, compact = false }: TaskCardProps) {
               }}>
                 📋 {tarea.subtareas.filter(s => s.completada).length}/{tarea.subtareas.length} pasos
               </span>
-            </div>
-          )}
+            )}
+            {tarea.comentarios && tarea.comentarios.length > 0 && (
+              <span style={{ 
+                display: 'inline-flex', padding: '2px 6px', borderRadius: '4px',
+                background: 'rgba(99, 102, 241, 0.08)', border: '1px solid rgba(99, 102, 241, 0.2)',
+                color: '#6366f1', fontWeight: 600, alignItems: 'center', gap: '3px'
+              }}>
+                💬 {tarea.comentarios.length}
+              </span>
+            )}
+          </div>
         </div>
       )}
 

@@ -1,8 +1,8 @@
 import { useState, type FormEvent } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { TagBadge, PRIORIDAD_OPTIONS, ESTADO_OPTIONS } from '../ui/Badges'
-import { formatDateTime } from '../../lib/utils'
-import type { Tarea, Etiqueta, TareaFormData } from '../../types'
+import { formatDateTime, genId } from '../../lib/utils'
+import type { Tarea, Etiqueta, TareaFormData, Comentario } from '../../types'
 
 interface TaskModalProps {
   tarea?: Tarea
@@ -34,6 +34,27 @@ export function TaskModal({  tarea,
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(false)
+
+  const [nuevoComentarioNombre, setNuevoComentarioNombre] = useState('Soporte Técnico')
+  const [nuevoComentarioTexto, setNuevoComentarioTexto] = useState('')
+
+  const handleAddComment = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    if (!tarea || !onUpdate || !nuevoComentarioNombre.trim() || !nuevoComentarioTexto.trim()) return
+    setLoading(true)
+    const comment: Comentario = {
+      id: genId(),
+      tarea_id: tarea.id,
+      autor_nombre: nuevoComentarioNombre,
+      contenido: nuevoComentarioTexto,
+      created_at: new Date().toISOString()
+    }
+    const nuevos = [...(tarea.comentarios || []), comment]
+    // Optimistic / rely on upstrem state
+    await onUpdate(tarea.id, { comentarios: nuevos })
+    setNuevoComentarioTexto('')
+    setLoading(false)
+  }
 
   const set = (key: keyof TareaFormData) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setForm(prev => ({ ...prev, [key]: e.target.value }))
@@ -399,6 +420,39 @@ export function TaskModal({  tarea,
                   </div>
                 </div>
               </div>
+
+              {/* Comentarios (Solo Edit) */}
+              {isEdit && tarea && (
+                <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '1.25rem', marginTop: '1.25rem' }}>
+                   <h3 style={{ fontSize: '0.875rem', fontWeight: 700, marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      💬 Comentarios <span style={{ fontSize: '0.75rem', color: 'var(--brand-500)' }}>({tarea.comentarios?.length || 0})</span>
+                   </h3>
+
+                   {/* Add Comment */}
+                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem', background: 'var(--bg-hover)', padding: '0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
+                     <input type="text" className="input input-sm" placeholder="Tu nombre..." value={nuevoComentarioNombre} onChange={e => setNuevoComentarioNombre(e.target.value)} style={{ padding: '0.35rem 0.5rem', fontSize: '0.8125rem' }} />
+                     <textarea className="input" placeholder="Escribe tu respuesta..." value={nuevoComentarioTexto} onChange={e => setNuevoComentarioTexto(e.target.value)} style={{ minHeight: '60px', padding: '0.5rem', resize: 'vertical', fontSize: '0.8125rem' }} />
+                     <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '4px' }}>
+                        <button type="button" className="btn btn-primary btn-sm" onClick={handleAddComment} disabled={loading || !nuevoComentarioNombre.trim() || !nuevoComentarioTexto.trim()}>Responder</button>
+                     </div>
+                   </div>
+
+                   {/* List */}
+                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                      {(tarea.comentarios || []).slice().reverse().map(c => (
+                         <div key={c.id} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-default)', padding: '0.75rem', borderRadius: 'var(--radius-md)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+                               <strong style={{ fontSize: '0.8125rem', color: 'var(--brand-500)' }}>{c.autor_nombre}</strong>
+                               <span style={{ fontSize: '0.625rem', color: 'var(--text-muted)' }}>{formatDateTime(c.created_at)}</span>
+                            </div>
+                            <div style={{ fontSize: '0.8125rem', whiteSpace: 'pre-wrap', color: 'var(--text-primary)', lineHeight: 1.5 }}>
+                               {c.contenido}
+                            </div>
+                         </div>
+                      ))}
+                   </div>
+                </div>
+              )}
 
               {error && (
                 <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 'var(--radius-md)', padding: '0.75rem', color: '#EF4444', fontSize: '0.875rem' }}>
