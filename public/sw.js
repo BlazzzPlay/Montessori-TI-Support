@@ -1,64 +1,102 @@
-// Tareas Blazz — Service Worker
-// Provides offline support and resource caching for the PWA
+// Tareas Blazz — Service Worker v2
+// Estrategia: Network-first para HTML/JS/CSS, Cache-first para imágenes/fuentes
+// Garantiza que nuevas versiones del app se carguen inmediatamente.
 
-const CACHE_NAME = 'tareas-blazz-v1'
-const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
+const CACHE_VERSION = 'tareas-blazz-v2'
+const IMMUTABLE_CACHE = 'tareas-blazz-immutable'
+
+// Patrones de assets que pueden cachearse de forma duradera (sin cambiar nunca su URL)
+const IMMUTABLE_PATTERNS = [
+  /\/assets\/.+\.(png|jpg|svg|ico|woff2?)$/,
+  /fonts\.googleapis\.com/,
+  /fonts\.gstatic\.com/,
 ]
 
-// Install: cache static assets
+// --- Install: pre-caché del shell mínimo ---
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
+    caches.open(CACHE_VERSION).then((cache) =>
+      cache.addAll(['/', '/manifest.json'])
+    )
   )
+  // Activar de inmediato sin esperar a que se cierren las pestañas viejas
   self.skipWaiting()
 })
 
-// Activate: clean up old caches
+// --- Activate: eliminar cachés antigas y tomar control ---
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
-    )
+      Promise.all(
+        keys
+          .filter((k) => k !== CACHE_VERSION && k !== IMMUTABLE_CACHE)
+          .map((k) => caches.delete(k))
+      )
+    ).then(() => {
+      // Tomar control de todas las pestañas abiertas inmediatamente
+      return self.clients.claim()
+    }).then(() => {
+      // Notificar a todos los clientes que hay una nueva versión → auto-reload
+      return self.clients.matchAll({ type: 'window' }).then((clients) => {
+        clients.forEach((client) => client.postMessage({ type: 'SW_UPDATED' }))
+      })
+    })
   )
-  self.clients.claim()
 })
 
-// Fetch: Network-first for API, Cache-first for static assets
+// --- Fetch: lógica de red inteligente ---
 self.addEventListener('fetch', (event) => {
-  const url = new URL(event.request.url)
+  const req = event.request
+  const url = new URL(req.url)
 
-  // Skip non-GET requests
-  if (event.request.method !== 'GET') return
+  // Ignorar peticiones no-GET
+  if (req.method !== 'GET') return
 
-  // Network-first for InsForge API calls
-  if (url.hostname.includes('insforge.app')) {
+  // 1. API de InsForge → siempre red, sin caché
+  if (url.hostname.includes('insforge.app') || url.hostname.includes('insforge.io')) {
     event.respondWith(
-      fetch(event.request).catch(() => caches.match(event.request))
+      fetch(req).catch(() => new Response('{"error":"offline"}', {
+        headers: { 'Content-Type': 'application/json' }
+      }))
     )
     return
   }
 
-  // Cache-first for static assets
+  // 2. Assets inmutables (imágenes, fuentes con hash en URL) → Cache-first
+  if (IMMUTABLE_PATTERNS.some((p) => p.test(url.href))) {
+    event.respondWith(
+      caches.open(IMMUTABLE_CACHE).then(async (cache) => {
+        const cached = await cache.match(req)
+        if (cached) return cached
+        const response = await fetch(req)
+        if (response.ok) cache.put(req, response.clone())
+        return response
+      })
+    )
+    return
+  }
+
+  // 3. HTML, JS, CSS y navegación → Network-first
+  // Intenta siempre la red primero; si falla, sirve de caché.
+  // Así el usuario SIEMPRE ve la última versión cuando hay conexión.
   if (url.origin === location.origin) {
     event.respondWith(
-      caches.match(event.request).then((cached) => {
-        if (cached) return cached
-        return fetch(event.request).then((response) => {
-          if (response.status === 200) {
-            const clone = response.clone()
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone))
-          }
-          return response
-        }).catch(() => caches.match('/index.html'))
+      fetch(req).then((response) => {
+        if (response.ok) {
+          const clone = response.clone()
+          caches.open(CACHE_VERSION).then((cache) => cache.put(req, clone))
+        }
+        return response
+      }).catch(async () => {
+        // Sin red: servir desde caché (modo offline)
+        const cached = await caches.match(req)
+        return cached ?? caches.match('/') ?? new Response('Offline', { status: 503 })
       })
     )
   }
 })
 
-// Handle push notifications
+// --- Push Notifications ---
 self.addEventListener('push', (event) => {
   if (!event.data) return
   const data = event.data.json()
