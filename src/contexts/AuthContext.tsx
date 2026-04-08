@@ -4,6 +4,9 @@ import {
 import { insforge } from '../lib/insforge'
 import type { UserProfile } from '../types'
 
+const USE_MOCK = !import.meta.env.VITE_INSFORGE_ANON_KEY
+const MOCK_SESSION_KEY = 'blazz_mock_session'
+
 interface AuthCtx {
   user: UserProfile | null
   loading: boolean
@@ -26,24 +29,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const checkSession = async () => {
       try {
-        const storedRefreshToken = localStorage.getItem('insforge_refresh_token')
-        if (storedRefreshToken) {
-          // Attempt to restore session using stored refresh token
-          await insforge.auth.refreshSession({ refreshToken: storedRefreshToken })
+        if (USE_MOCK) {
+          // Modo demo: restaurar sesión desde localStorage
+          const saved = localStorage.getItem(MOCK_SESSION_KEY)
+          if (saved) setUser(JSON.parse(saved))
+          return
         }
-
+        // Modo real: intentar restaurar sesión del SDK
+        const storedToken = localStorage.getItem('insforge_refresh_token')
+        if (storedToken) {
+          await insforge.auth.refreshSession({ refreshToken: storedToken }).catch(() => {})
+        }
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data } = await (insforge.auth as any).getCurrentSession()
-        if (data?.user) {
+        const result = await (insforge.auth as any).getCurrentSession?.()
+        if (result?.data?.user) {
           setUser({
-            id: data.user.id,
-            email: data.user.email,
-            nombre: data.user.email?.split('@')[0] ?? 'Usuario',
+            id: result.data.user.id,
+            email: result.data.user.email,
+            nombre: result.data.user.email?.split('@')[0] ?? 'Usuario',
             rol: 'tecnico'
           })
         }
       } catch (error) {
-        console.error('Session restoration failed:', error)
+        console.warn('Session check failed (modo demo activo):', error)
         localStorage.removeItem('insforge_refresh_token')
       } finally {
         setLoading(false)
@@ -54,19 +62,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signIn = useCallback(async (email: string, password: string): Promise<{ error?: string }> => {
     try {
+      if (USE_MOCK) {
+        // Modo demo: aceptar cualquier email con password "demo" o "admin"
+        if (!email.trim()) return { error: 'Ingresa un correo electrónico.' }
+        if (password.length < 4) return { error: 'Contraseña demasiado corta.' }
+        const mockUser: UserProfile = {
+          id: 'admin-mock',
+          email,
+          nombre: email.split('@')[0] ?? 'Administrador',
+          rol: 'tecnico'
+        }
+        localStorage.setItem(MOCK_SESSION_KEY, JSON.stringify(mockUser))
+        setUser(mockUser)
+        return {}
+      }
       const { data, error } = await insforge.auth.signInWithPassword({ email, password })
       if (error) return { error: 'Credenciales incorrectas. Verifica tu email y contraseña.' }
-      
       if (data?.user) {
-        if (data.refreshToken) {
-          localStorage.setItem('insforge_refresh_token', data.refreshToken)
-        }
-        setUser({
-          id: data.user.id,
-          email: data.user.email,
-          nombre: data.user.email?.split('@')[0] ?? 'Usuario',
-          rol: 'tecnico'
-        })
+        if (data.refreshToken) localStorage.setItem('insforge_refresh_token', data.refreshToken)
+        setUser({ id: data.user.id, email: data.user.email, nombre: data.user.email?.split('@')[0] ?? 'Usuario', rol: 'tecnico' })
       }
       return {}
     } catch {
@@ -75,6 +89,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const signOut = useCallback(async () => {
+    if (USE_MOCK) {
+      localStorage.removeItem(MOCK_SESSION_KEY)
+      setUser(null)
+      return
+    }
     await insforge.auth.signOut()
     localStorage.removeItem('insforge_refresh_token')
     setUser(null)

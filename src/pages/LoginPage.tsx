@@ -115,8 +115,8 @@ export function LoginPage() {
             </button>
           </form>
 
-          <div style={{ marginTop: '1.5rem', padding: '1rem', background: 'var(--bg-raised)', borderRadius: 'var(--radius-md)', fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
-            💡 <strong>Modo demo:</strong> Si no tienes credenciales configuradas, la app funciona con datos de muestra. Para configurar el backend, crea un usuario en InsForge Auth.
+          <div style={{ marginTop: '1.5rem', padding: '1rem', background: 'rgba(37,99,235,0.06)', border: '1px solid rgba(37,99,235,0.2)', borderRadius: 'var(--radius-md)', fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+            💡 <strong style={{ color: 'var(--brand-500)' }}>Modo demo activo:</strong> Ingresa cualquier email y una contraseña de al menos 4 caracteres para acceder con datos de muestra.
           </div>
         </motion.div>
 
