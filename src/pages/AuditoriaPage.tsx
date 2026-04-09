@@ -320,6 +320,11 @@ export function AuditoriaPage() {
                 </div>
               ))}
             </div>
+            <div style={{ marginTop: 'auto', paddingTop: '0.75rem' }}>
+              <div style={{ padding: '0.5rem 0.75rem', background: 'rgba(59,130,246,0.04)', border: '1px dashed rgba(59,130,246,0.2)', borderRadius: 'var(--radius-md)', fontSize: '0.6875rem', color: 'var(--text-muted)', lineHeight: '1.4' }}>
+                <strong style={{ color: 'var(--brand-500)', fontWeight: 700 }}>ℹ️ Nota de Auditoría:</strong> Los contadores arriba reflejan ayudas rápidas que no requieren ticket formal.
+              </div>
+            </div>
           </div>
         </motion.div>
 
