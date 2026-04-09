@@ -4,6 +4,9 @@ import { useHelpCounters } from '../hooks/useHelpCounters'
 import { sortForTV, getDeadlineStatus } from '../lib/utils'
 import { useReservas } from '../hooks/useReservas'
 import { useSettings } from '../hooks/useSettings'
+import { formatInTimeZone } from 'date-fns-tz'
+import { es } from 'date-fns/locale'
+import { CHILE_TZ } from '../lib/utils'
 import type { Tarea } from '../types'
 
 
@@ -93,8 +96,8 @@ export function TVPage() {
 
   const prestadasCount = reservas.filter(r => r.estado === 'en_prestamo').reduce((acc, r) => acc + r.cantidad, 0)
 
-  const timeStr = now.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-  const dateStr = now.toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+  const timeStr = formatInTimeZone(now, CHILE_TZ, 'HH:mm:ss')
+  const dateStr = formatInTimeZone(now, CHILE_TZ, "EEEE, d 'de' MMMM 'de' yyyy", { locale: es })
 
   return (
     <div className="tv-panel">

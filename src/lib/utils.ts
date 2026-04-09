@@ -1,21 +1,24 @@
+import { formatInTimeZone } from 'date-fns-tz'
 import type { Prioridad, EstadoTarea } from '../types'
+
+export const CHILE_TZ = 'America/Santiago'
 
 // ---- Dates ----
 export const now = () => new Date().toISOString()
 
 export const formatDate = (iso?: string): string => {
   if (!iso) return '—'
-  return new Date(iso).toLocaleDateString('es-CL', {
-    day: '2-digit', month: 'short', year: 'numeric'
-  })
+  return formatInTimeZone(new Date(iso), CHILE_TZ, "dd 'de' MMM, yyyy")
 }
 
 export const formatDateTime = (iso?: string): string => {
   if (!iso) return '—'
-  return new Date(iso).toLocaleString('es-CL', {
-    day: '2-digit', month: 'short', year: 'numeric',
-    hour: '2-digit', minute: '2-digit'
-  })
+  return formatInTimeZone(new Date(iso), CHILE_TZ, "dd 'de' MMM, yyyy HH:mm")
+}
+
+export const formatTimeOnly = (iso?: string): string => {
+  if (!iso) return '—'
+  return formatInTimeZone(new Date(iso), CHILE_TZ, "HH:mm")
 }
 
 export const getDeadlineStatus = (fechaLimite?: string): 'ok' | 'today' | 'soon' | 'overdue' => {

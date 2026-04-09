@@ -4,9 +4,9 @@ import { AppLayout } from '../components/layout/AppLayout'
 import { useReservas } from '../hooks/useReservas'
 import { useSettings } from '../hooks/useSettings'
 import { useToast } from '../contexts/ThemeContext'
+import { formatInTimeZone } from 'date-fns-tz'
+import { CHILE_TZ } from '../lib/utils'
 import type { ReservaTablet, TipoSolicitante, EstadoReserva } from '../types'
-import { format } from 'date-fns'
-import { es } from 'date-fns/locale'
 
 export function ReservaTabletsPage() {
   const { reservas, loading, createReserva, updateReserva, deleteReserva } = useReservas()
@@ -134,10 +134,10 @@ export function ReservaTabletsPage() {
                       </td>
                       <td>{reserva.curso || '—'}</td>
                       <td style={{ fontSize: '0.8125rem' }}>
-                        {format(new Date(reserva.fecha_inicio), "d MMM, HH:mm", { locale: es })}
+                        {formatInTimeZone(new Date(reserva.fecha_inicio), CHILE_TZ, "d MMM, HH:mm")}
                       </td>
                       <td style={{ fontSize: '0.8125rem' }}>
-                        {format(new Date(reserva.fecha_fin), "d MMM, HH:mm", { locale: es })}
+                        {formatInTimeZone(new Date(reserva.fecha_fin), CHILE_TZ, "d MMM, HH:mm")}
                       </td>
                       <td>
                         <span className={`badge`} style={{ 
@@ -192,8 +192,8 @@ function ReservaModal({ type, reserva, onClose, onSave }: { type: 'prestamo' | '
     solicitante_tipo: (reserva?.solicitante_tipo ?? 'profesor') as TipoSolicitante,
     cantidad: reserva?.cantidad ?? 1,
     curso: reserva?.curso ?? '',
-    fecha_inicio: reserva ? format(new Date(reserva.fecha_inicio), "yyyy-MM-dd'T'HH:mm") : format(new Date(), "yyyy-MM-dd'T'HH:mm"),
-    fecha_fin: reserva ? format(new Date(reserva.fecha_fin), "yyyy-MM-dd'T'HH:mm") : format(new Date(Date.now() + 3600000 * 2), "yyyy-MM-dd'T'HH:mm"),
+    fecha_inicio: reserva ? formatInTimeZone(new Date(reserva.fecha_inicio), CHILE_TZ, "yyyy-MM-dd'T'HH:mm") : formatInTimeZone(new Date(), CHILE_TZ, "yyyy-MM-dd'T'HH:mm"),
+    fecha_fin: reserva ? formatInTimeZone(new Date(reserva.fecha_fin), CHILE_TZ, "yyyy-MM-dd'T'HH:mm") : formatInTimeZone(new Date(Date.now() + 3600000 * 2), CHILE_TZ, "yyyy-MM-dd'T'HH:mm"),
     notas: reserva?.notas ?? '',
     estado: reserva?.estado ?? (type === 'prestamo' ? 'en_prestamo' : 'reservado')
   })

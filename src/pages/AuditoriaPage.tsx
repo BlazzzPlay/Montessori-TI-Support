@@ -8,8 +8,9 @@ import { useTareas } from '../hooks/useTareas'
 import { useHelpCounters } from '../hooks/useHelpCounters'
 import { useReservas } from '../hooks/useReservas'
 import { useSettings } from '../hooks/useSettings'
-import { formatDate, formatDateTime, STATUS_LABELS } from '../lib/utils'
-import { format, isAfter, isToday, differenceInMinutes } from 'date-fns'
+import { formatDate, formatDateTime, STATUS_LABELS, CHILE_TZ } from '../lib/utils'
+import { isAfter, isToday, differenceInMinutes } from 'date-fns'
+import { formatInTimeZone } from 'date-fns-tz'
 import type { Tarea } from '../types'
 
 // ──────────────────────────────────────────────────
@@ -449,9 +450,9 @@ export function AuditoriaPage() {
                               {isOverdue ? (
                                 <span style={{ color: 'var(--priority-urgente)' }}>🔥 ATRASADO: {hours}h {mins}m</span>
                               ) : r.estado === 'en_prestamo' ? (
-                                <span style={{ color: 'var(--priority-alta)' }}>⌛ Entrega: {format(fin, 'HH:mm')}</span>
+                                <span style={{ color: 'var(--priority-alta)' }}>⌛ Entrega: {formatInTimeZone(fin, CHILE_TZ, 'HH:mm')}</span>
                               ) : (
-                                <span style={{ color: 'var(--brand-500)' }}>📅 Lista: {format(new Date(r.fecha_inicio), 'HH:mm')}</span>
+                                <span style={{ color: 'var(--brand-500)' }}>📅 Lista: {formatInTimeZone(new Date(r.fecha_inicio), CHILE_TZ, 'HH:mm')}</span>
                               )}
                            </div>
                            <div style={{ fontSize: '0.625rem', textTransform: 'uppercase', fontWeight: 800, color: 'var(--text-muted)' }}>
