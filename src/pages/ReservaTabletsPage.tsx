@@ -238,55 +238,6 @@ function ReservaModal({ type, reserva, onClose, onSave }: { type: 'prestamo' | '
           <button className="btn btn-ghost btn-icon btn-sm" onClick={onClose}>✕</button>
         </div>
         <div className="modal-body">
-          {/* Selectores de Bloques (Desplegables) */}
-          {type === 'prestamo' && (
-            <div style={{ marginBottom: '1.5rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', padding: '1rem', background: 'var(--bg-raised)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-subtle)' }}>
-              <div>
-                <label className="form-label" style={{ fontSize: '0.625rem', color: 'var(--brand-500)', fontWeight: 800 }}>SUGERENCIA INICIO</label>
-                <select 
-                  className="select" 
-                  style={{ fontSize: '0.8125rem', fontWeight: 700 }}
-                  value={BLOQUES_MANANA.find(b => form.fecha_inicio.endsWith(b.inicio))?.inicio || BLOQUES_TARDE.find(b => form.fecha_inicio.endsWith(b.inicio))?.inicio || ''}
-                  onChange={e => {
-                    if (!e.target.value) return
-                    const today = formatInTimeZone(new Date(), CHILE_TZ, "yyyy-MM-dd")
-                    setForm({ ...form, fecha_inicio: `${today}T${e.target.value}` })
-                  }}
-                >
-                  <option value="">-- Seleccionar Bloque --</option>
-                  <optgroup label="Jornada Mañana">
-                    {BLOQUES_MANANA.map(b => <option key={`sel-s-m-${b.id}`} value={b.inicio}>{b.label} Bloque ({b.inicio})</option>)}
-                  </optgroup>
-                  <optgroup label="Jornada Tarde">
-                    {BLOQUES_TARDE.map(b => <option key={`sel-s-t-${b.id}`} value={b.inicio}>{b.label} Bloque ({b.inicio})</option>)}
-                  </optgroup>
-                </select>
-              </div>
-
-              <div>
-                <label className="form-label" style={{ fontSize: '0.625rem', color: 'var(--priority-alta)', fontWeight: 800 }}>SUGERENCIA TÉRMINO</label>
-                <select 
-                  className="select" 
-                  style={{ fontSize: '0.8125rem', fontWeight: 700 }}
-                  value={BLOQUES_MANANA.find(b => form.fecha_fin.endsWith(b.fin))?.fin || BLOQUES_TARDE.find(b => form.fecha_fin.endsWith(b.fin))?.fin || ''}
-                  onChange={e => {
-                    if (!e.target.value) return
-                    const today = formatInTimeZone(new Date(), CHILE_TZ, "yyyy-MM-dd")
-                    setForm({ ...form, fecha_fin: `${today}T${e.target.value}` })
-                  }}
-                >
-                  <option value="">-- Seleccionar Bloque --</option>
-                  <optgroup label="Jornada Mañana">
-                    {BLOQUES_MANANA.map(b => <option key={`sel-e-m-${b.id}`} value={b.fin}>{b.label} Término ({b.fin})</option>)}
-                  </optgroup>
-                  <optgroup label="Jornada Tarde">
-                    {BLOQUES_TARDE.map(b => <option key={`sel-e-t-${b.id}`} value={b.fin}>{b.label} Término ({b.fin})</option>)}
-                  </optgroup>
-                </select>
-              </div>
-            </div>
-          )}
-
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             <div className="form-group" style={{ gridColumn: 'span 2' }}>
               <label className="form-label required">Nombre del Solicitante</label>
@@ -308,12 +259,59 @@ function ReservaModal({ type, reserva, onClose, onSave }: { type: 'prestamo' | '
             <label className="form-label">Curso</label>
             <input type="text" className="input" placeholder="Ej: 8° Básico A" value={form.curso} onChange={e => setForm({...form, curso: e.target.value})} />
           </div>
+
+          {/* Bloque de sugerencias (Entre Curso y Horas) */}
+          {type === 'prestamo' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1.5rem', padding: '1rem', background: 'var(--bg-raised)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-subtle)' }}>
+              <div>
+                <label className="form-label" style={{ fontSize: '0.625rem', color: 'var(--brand-500)', fontWeight: 800 }}>SUGERENCIA INICIO</label>
+                <select 
+                  className="select" 
+                  style={{ fontSize: '0.75rem', height: '32px', minHeight: '32px' }}
+                  value={BLOQUES_MANANA.find(b => form.fecha_inicio.endsWith(b.inicio))?.inicio || BLOQUES_TARDE.find(b => form.fecha_inicio.endsWith(b.inicio))?.inicio || ''}
+                  onChange={e => {
+                    if (!e.target.value) return
+                    const today = formatInTimeZone(new Date(), CHILE_TZ, "yyyy-MM-dd")
+                    setForm({ ...form, fecha_inicio: `${today}T${e.target.value}` })
+                  }}
+                >
+                  <option value="">-- Bloque Inicio --</option>
+                  <optgroup label="Jornada Mañana">
+                    {BLOQUES_MANANA.map(b => <option key={`sel-s-m-${b.id}`} value={b.inicio}>{b.label} Bloque ({b.inicio})</option>)}
+                  </optgroup>
+                  <optgroup label="Jornada Tarde">
+                    {BLOQUES_TARDE.map(b => <option key={`sel-s-t-${b.id}`} value={b.inicio}>{b.label} Bloque ({b.inicio})</option>)}
+                  </optgroup>
+                </select>
+              </div>
+
+              <div>
+                <label className="form-label" style={{ fontSize: '0.625rem', color: 'var(--priority-alta)', fontWeight: 800 }}>SUGERENCIA TÉRMINO</label>
+                <select 
+                  className="select" 
+                  style={{ fontSize: '0.75rem', height: '32px', minHeight: '32px' }}
+                  value={BLOQUES_MANANA.find(b => form.fecha_fin.endsWith(b.fin))?.fin || BLOQUES_TARDE.find(b => form.fecha_fin.endsWith(b.fin))?.fin || ''}
+                  onChange={e => {
+                    if (!e.target.value) return
+                    const today = formatInTimeZone(new Date(), CHILE_TZ, "yyyy-MM-dd")
+                    setForm({ ...form, fecha_fin: `${today}T${e.target.value}` })
+                  }}
+                >
+                  <option value="">-- Bloque Término --</option>
+                  <optgroup label="Jornada Mañana">
+                    {BLOQUES_MANANA.map(b => <option key={`sel-e-m-${b.id}`} value={b.fin}>{b.label} Término ({b.fin})</option>)}
+                  </optgroup>
+                  <optgroup label="Jornada Tarde">
+                    {BLOQUES_TARDE.map(b => <option key={`sel-e-t-${b.id}`} value={b.fin}>{b.label} Término ({b.fin})</option>)}
+                  </optgroup>
+                </select>
+              </div>
+            </div>
+          )}
           
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1.5rem' }}>
             <div className="form-group">
-              <label className="form-label required">
-                {type === 'prestamo' ? 'Hora Inicio' : 'Inicio Préstamo'}
-              </label>
+              <label className="form-label required">Hora Inicio</label>
               <input 
                 type={type === 'prestamo' ? "time" : "datetime-local"} 
                 className="input" 
@@ -329,9 +327,7 @@ function ReservaModal({ type, reserva, onClose, onSave }: { type: 'prestamo' | '
               />
             </div>
             <div className="form-group">
-              <label className="form-label required">
-                {type === 'prestamo' ? 'Hora Término' : 'Término Préstamo'}
-              </label>
+              <label className="form-label required">Hora Término</label>
               <input 
                 type={type === 'prestamo' ? "time" : "datetime-local"} 
                 className="input" 
