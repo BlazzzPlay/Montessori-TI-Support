@@ -193,7 +193,7 @@ p  { color: var(--text-secondary); font-size: clamp(0.8125rem, 2vw, 0.9375rem); 
   z-index: 100;
   transition: transform var(--duration-normal) var(--ease-smooth),
               background var(--duration-normal) var(--ease-smooth);
-  overflow-y: auto;
+  overflow-y: hidden;
 }
 
 .main-content {
@@ -236,6 +236,7 @@ p  { color: var(--text-secondary); font-size: clamp(0.8125rem, 2vw, 0.9375rem); 
   align-items: center;
   gap: 0.75rem;
   border-bottom: 1px solid var(--sidebar-border);
+  flex-shrink: 0;
 }
 
 .sidebar-logo-icon {
@@ -253,11 +254,12 @@ p  { color: var(--text-secondary); font-size: clamp(0.8125rem, 2vw, 0.9375rem); 
 .sidebar-logo-sub  { font-size: 0.6875rem; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
 
 .sidebar-nav {
-  flex: 1;
-  padding: 0.75rem 0.75rem;
+  flex: 1 1 0;
+  padding: 0.75rem;
   display: flex;
   flex-direction: column;
   gap: 2px;
+  overflow-y: auto;
 }
 
 .sidebar-section-label {
@@ -286,6 +288,7 @@ p  { color: var(--text-secondary); font-size: clamp(0.8125rem, 2vw, 0.9375rem); 
   width: 100%;
   text-align: left;
   position: relative;
+  flex-shrink: 0;
 }
 
 .nav-item:hover {
@@ -327,6 +330,7 @@ p  { color: var(--text-secondary); font-size: clamp(0.8125rem, 2vw, 0.9375rem); 
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  flex-shrink: 0;
 }
 
 .user-avatar {

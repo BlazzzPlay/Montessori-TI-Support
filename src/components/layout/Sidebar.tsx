@@ -50,7 +50,7 @@ export function Sidebar({ tareas, isOpen = false, onClose }: SidebarProps) {
         </div>
 
         {/* Stats summary */}
-        <div style={{ padding: '0.75rem', margin: '0.75rem', background: 'var(--bg-raised)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', display: 'flex', gap: '0.5rem' }}>
+        <div style={{ padding: '0.75rem', margin: '0.75rem', background: 'var(--bg-raised)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
           <div style={{ flex: 1, textAlign: 'center' }}>
             <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--brand-500)' }}>{totalPending}</div>
             <div style={{ fontSize: '0.625rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Pendientes</div>

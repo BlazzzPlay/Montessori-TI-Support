@@ -2,7 +2,7 @@
 // Estrategia: Network-first para HTML/JS/CSS, Cache-first para imágenes/fuentes
 // Garantiza que nuevas versiones del app se carguen inmediatamente.
 
-const CACHE_VERSION = 'tareas-blazz-v2'
+const CACHE_VERSION = 'tareas-blazz-v3'
 const IMMUTABLE_CACHE = 'tareas-blazz-immutable'
 
 // Patrones de assets que pueden cachearse de forma duradera (sin cambiar nunca su URL)
