@@ -13,22 +13,6 @@ import type { Tarea } from '../types'
 // Helpers para derivar estadísticas desde tareas reales
 // ──────────────────────────────────────────────────
 
-function calcStats(tareas: Tarea[]) {
-  const resueltas = tareas.filter(t => t.estado === 'resuelto' || t.estado === 'cerrado')
-
-  // % cambio vs semana anterior (resueltas esta semana vs anterior)
-  const now = new Date()
-  const weekStart = new Date(now); weekStart.setDate(now.getDate() - 7)
-  const prevWeekStart = new Date(now); prevWeekStart.setDate(now.getDate() - 14)
-  const estaSeamna = resueltas.filter(t => new Date(t.updated_at) >= weekStart).length
-  const semanaAnterior = resueltas.filter(t => {
-    const d = new Date(t.updated_at)
-    return d >= prevWeekStart && d < weekStart
-  }).length
-  const pct = semanaAnterior > 0 ? Math.round(((estaSeamna - semanaAnterior) / semanaAnterior) * 100) : 0
-
-  return { totalResueltas: resueltas.length, pct, estaSeamna }
-}
 
 function calcEtiquetaStats(tareas: Tarea[]) {
   const map = new Map<string, { nombre: string; color: string; total: number }>()
@@ -201,7 +185,6 @@ export function AuditoriaPage() {
   }), [tareasResueltas, currentYear])
 
   // Stats y gráficos calculados desde datos reales (todas las tareas visibles, no solo el filtro)
-  const stats        = useMemo(() => calcStats(visibleTareas), [visibleTareas])
   const etiquetaStats = useMemo(() => calcEtiquetaStats(visibleTareas), [visibleTareas])
   const volumeData   = useMemo(() => calcVolume(visibleTareas), [visibleTareas])
 
@@ -278,9 +261,7 @@ export function AuditoriaPage() {
                  <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginLeft: '4px', textTransform: 'uppercase' }}>mes</span>
               </div>
             </div>
-            <div className={`kpi-trend ${stats.pct >= 0 ? 'trend-up' : 'trend-down'}`} style={{ marginTop: 'auto' }}>
-              {stats.pct >= 0 ? '↑' : '↓'} {Math.abs(stats.pct)}% vs sem. ant.
-            </div>
+
           </div>
 
           {/* Activas Ahora */}
