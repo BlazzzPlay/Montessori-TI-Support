@@ -262,12 +262,12 @@ function ReservaModal({ type, reserva, onClose, onSave }: { type: 'prestamo' | '
 
           {/* Bloque de sugerencias (Entre Curso y Horas) */}
           {type === 'prestamo' && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1.5rem', padding: '1rem', background: 'var(--bg-raised)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-subtle)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem', marginTop: '1.5rem', marginBottom: '1.5rem', padding: '1.5rem', background: 'var(--bg-raised)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-subtle)' }}>
               <div>
-                <label className="form-label" style={{ fontSize: '0.625rem', color: 'var(--brand-500)', fontWeight: 800 }}>SUGERENCIA INICIO</label>
+                <label className="form-label" style={{ fontSize: '0.6875rem', color: 'var(--brand-500)', fontWeight: 800, marginBottom: '0.5rem' }}>SUGERENCIA INICIO</label>
                 <select 
                   className="select" 
-                  style={{ fontSize: '0.75rem', height: '32px', minHeight: '32px' }}
+                  style={{ fontSize: '0.8125rem', height: '40px', minHeight: '40px' }}
                   value={BLOQUES_MANANA.find(b => form.fecha_inicio.endsWith(b.inicio))?.inicio || BLOQUES_TARDE.find(b => form.fecha_inicio.endsWith(b.inicio))?.inicio || ''}
                   onChange={e => {
                     if (!e.target.value) return
@@ -286,10 +286,10 @@ function ReservaModal({ type, reserva, onClose, onSave }: { type: 'prestamo' | '
               </div>
 
               <div>
-                <label className="form-label" style={{ fontSize: '0.625rem', color: 'var(--priority-alta)', fontWeight: 800 }}>SUGERENCIA TÉRMINO</label>
+                <label className="form-label" style={{ fontSize: '0.6875rem', color: 'var(--priority-alta)', fontWeight: 800, marginBottom: '0.5rem' }}>SUGERENCIA TÉRMINO</label>
                 <select 
                   className="select" 
-                  style={{ fontSize: '0.75rem', height: '32px', minHeight: '32px' }}
+                  style={{ fontSize: '0.8125rem', height: '40px', minHeight: '40px' }}
                   value={BLOQUES_MANANA.find(b => form.fecha_fin.endsWith(b.fin))?.fin || BLOQUES_TARDE.find(b => form.fecha_fin.endsWith(b.fin))?.fin || ''}
                   onChange={e => {
                     if (!e.target.value) return
@@ -309,12 +309,13 @@ function ReservaModal({ type, reserva, onClose, onSave }: { type: 'prestamo' | '
             </div>
           )}
           
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1.5rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem', marginTop: '0.5rem' }}>
             <div className="form-group">
-              <label className="form-label required">Hora Inicio</label>
+              <label className="form-label required" style={{ fontWeight: 700 }}>Hora Inicio</label>
               <input 
                 type={type === 'prestamo' ? "time" : "datetime-local"} 
                 className="input" 
+                style={{ height: '42px' }}
                 value={type === 'prestamo' ? form.fecha_inicio.split('T')[1] : form.fecha_inicio} 
                 onChange={e => {
                   if (type === 'prestamo') {
@@ -327,10 +328,11 @@ function ReservaModal({ type, reserva, onClose, onSave }: { type: 'prestamo' | '
               />
             </div>
             <div className="form-group">
-              <label className="form-label required">Hora Término</label>
+              <label className="form-label required" style={{ fontWeight: 700 }}>Hora Término</label>
               <input 
                 type={type === 'prestamo' ? "time" : "datetime-local"} 
                 className="input" 
+                style={{ height: '42px' }}
                 value={type === 'prestamo' ? form.fecha_fin.split('T')[1] : form.fecha_fin} 
                 onChange={e => {
                   if (type === 'prestamo') {
