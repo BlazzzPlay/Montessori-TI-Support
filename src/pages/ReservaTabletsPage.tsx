@@ -8,6 +8,29 @@ import { formatInTimeZone, fromZonedTime } from 'date-fns-tz'
 import { CHILE_TZ } from '../lib/utils'
 import type { ReservaTablet, TipoSolicitante, EstadoReserva } from '../types'
 
+// ──────────────────────────────────────────────────
+// CONSTANTES DE HORARIOS
+// ──────────────────────────────────────────────────
+const BLOQUES_MANANA = [
+  { id: 'm1', label: '1°', inicio: '08:00', fin: '08:45' },
+  { id: 'm2', label: '2°', inicio: '08:45', fin: '09:30' },
+  { id: 'm3', label: '3°', inicio: '09:45', fin: '10:30' },
+  { id: 'm4', label: '4°', inicio: '10:30', fin: '11:15' },
+  { id: 'm5', label: '5°', inicio: '11:25', fin: '12:10' },
+  { id: 'm6', label: '6°', inicio: '12:10', fin: '12:55' },
+  { id: 'm7', label: '7°', inicio: '12:55', fin: '13:30' },
+  { id: 'm8', label: '8°', inicio: '13:30', fin: '14:15' },
+]
+
+const BLOQUES_TARDE = [
+  { id: 't1', label: '1°', inicio: '14:00', fin: '14:45' },
+  { id: 't2', label: '2°', inicio: '14:45', fin: '15:30' },
+  { id: 't3', label: '3°', inicio: '15:45', fin: '16:30' },
+  { id: 't4', label: '4°', inicio: '16:30', fin: '17:15' },
+  { id: 't5', label: '5°', inicio: '17:25', fin: '18:10' },
+  { id: 't6', label: '6°', inicio: '18:10', fin: '18:55' },
+]
+
 export function ReservaTabletsPage() {
   const { reservas, loading, createReserva, updateReserva, deleteReserva } = useReservas()
   const { addToast } = useToast()
@@ -215,6 +238,51 @@ function ReservaModal({ type, reserva, onClose, onSave }: { type: 'prestamo' | '
           <button className="btn btn-ghost btn-icon btn-sm" onClick={onClose}>✕</button>
         </div>
         <div className="modal-body">
+          {/* Selector de Bloques (Pre-configurados) */}
+          {type === 'prestamo' && (
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label className="form-label" style={{ marginBottom: '0.75rem' }}>Bloques Horarios (Sugeridos)</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div>
+                  <div style={{ fontSize: '0.625rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>☀️ Jornada Mañana</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem' }}>
+                    {BLOQUES_MANANA.map(b => (
+                      <button 
+                        key={b.id} 
+                        className="btn btn-ghost btn-sm" 
+                        style={{ fontSize: '0.75rem', padding: '0.35rem' }}
+                        onClick={() => {
+                          const today = formatInTimeZone(new Date(), CHILE_TZ, "yyyy-MM-dd")
+                          setForm({ ...form, fecha_inicio: `${today}T${b.inicio}`, fecha_fin: `${today}T${b.fin}` })
+                        }}
+                      >
+                        {b.label} <span style={{ opacity: 0.6, fontWeight: 400 }}>{b.inicio}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.625rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>🌤️ Jornada Tarde</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
+                    {BLOQUES_TARDE.map(b => (
+                      <button 
+                        key={b.id} 
+                        className="btn btn-ghost btn-sm" 
+                        style={{ fontSize: '0.75rem', padding: '0.35rem' }}
+                        onClick={() => {
+                          const today = formatInTimeZone(new Date(), CHILE_TZ, "yyyy-MM-dd")
+                          setForm({ ...form, fecha_inicio: `${today}T${b.inicio}`, fecha_fin: `${today}T${b.fin}` })
+                        }}
+                      >
+                        {b.label} <span style={{ opacity: 0.6, fontWeight: 400 }}>{b.inicio}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             <div className="form-group" style={{ gridColumn: 'span 2' }}>
               <label className="form-label required">Nombre del Solicitante</label>
@@ -236,14 +304,43 @@ function ReservaModal({ type, reserva, onClose, onSave }: { type: 'prestamo' | '
             <label className="form-label">Curso</label>
             <input type="text" className="input" placeholder="Ej: 8° Básico A" value={form.curso} onChange={e => setForm({...form, curso: e.target.value})} />
           </div>
+          
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem' }}>
             <div className="form-group">
-              <label className="form-label required">Inicio Préstamo</label>
-              <input type="datetime-local" className="input" value={form.fecha_inicio} onChange={e => setForm({...form, fecha_inicio: e.target.value})} />
+              <label className="form-label required">
+                {type === 'prestamo' ? 'Hora Inicio' : 'Inicio Préstamo'}
+              </label>
+              <input 
+                type={type === 'prestamo' ? "time" : "datetime-local"} 
+                className="input" 
+                value={type === 'prestamo' ? form.fecha_inicio.split('T')[1] : form.fecha_inicio} 
+                onChange={e => {
+                  if (type === 'prestamo') {
+                    const today = form.fecha_inicio.split('T')[0]
+                    setForm({...form, fecha_inicio: `${today}T${e.target.value}`})
+                  } else {
+                    setForm({...form, fecha_inicio: e.target.value})
+                  }
+                }} 
+              />
             </div>
             <div className="form-group">
-              <label className="form-label required">Término Préstamo</label>
-              <input type="datetime-local" className="input" value={form.fecha_fin} onChange={e => setForm({...form, fecha_fin: e.target.value})} />
+              <label className="form-label required">
+                {type === 'prestamo' ? 'Hora Término' : 'Término Préstamo'}
+              </label>
+              <input 
+                type={type === 'prestamo' ? "time" : "datetime-local"} 
+                className="input" 
+                value={type === 'prestamo' ? form.fecha_fin.split('T')[1] : form.fecha_fin} 
+                onChange={e => {
+                  if (type === 'prestamo') {
+                    const today = form.fecha_fin.split('T')[0]
+                    setForm({...form, fecha_fin: `${today}T${e.target.value}`})
+                  } else {
+                    setForm({...form, fecha_fin: e.target.value})
+                  }
+                }} 
+              />
             </div>
           </div>
           <div className="form-group" style={{ marginTop: '1rem' }}>
