@@ -4,7 +4,7 @@ import { AppLayout } from '../components/layout/AppLayout'
 import { useReservas } from '../hooks/useReservas'
 import { useSettings } from '../hooks/useSettings'
 import { useToast } from '../contexts/ThemeContext'
-import { formatInTimeZone } from 'date-fns-tz'
+import { formatInTimeZone, fromZonedTime } from 'date-fns-tz'
 import { CHILE_TZ } from '../lib/utils'
 import type { ReservaTablet, TipoSolicitante, EstadoReserva } from '../types'
 
@@ -21,15 +21,22 @@ export function ReservaTabletsPage() {
   const reservasHoy = reservas.filter(r => r.estado === 'reservado').length
   
   const handleSave = async (fields: any) => {
+    // Convertir fechas ingenuas (naive) a UTC real usando la zona de Chile
+    const preparedFields = {
+      ...fields,
+      fecha_inicio: fromZonedTime(fields.fecha_inicio, CHILE_TZ).toISOString(),
+      fecha_fin: fromZonedTime(fields.fecha_fin, CHILE_TZ).toISOString()
+    }
+
     if (editingReserva) {
-      const res = await updateReserva(editingReserva.id, fields)
+      const res = await updateReserva(editingReserva.id, preparedFields)
       if (res.error) addToast(res.error, 'error')
       else {
         addToast('✓ Cambios guardados', 'success')
         setEditingReserva(null)
       }
     } else {
-      const res = await createReserva(fields)
+      const res = await createReserva(preparedFields)
       if (res.error) addToast(res.error, 'error')
       else {
         addToast(modalType === 'prestamo' ? '✓ Préstamo registrado' : '✓ Reserva creada', 'success')
