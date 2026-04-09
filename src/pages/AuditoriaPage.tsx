@@ -250,80 +250,77 @@ export function AuditoriaPage() {
           initial={{ opacity: 0, y: 20 }} 
           animate={{ opacity: 1, y: 0 }} 
           style={{ 
-            display: 'flex', gap: '1.5rem', flexWrap: 'wrap', marginBottom: '2rem', 
-            background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-lg)', padding: '1.25rem'
+            display: 'flex', gap: 'clamp(0.75rem, 2vw, 1.25rem)', flexWrap: 'wrap', marginBottom: '1.5rem', 
+            background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-lg)', padding: '1rem'
           }}
         >
 
           {/* Total Resueltas (Año/Mes) */}
-          <div style={{ flex: '1 1 220px', display: 'flex', flexDirection: 'column', paddingRight: '1.5rem', borderRight: '1px solid var(--border-subtle)' }}>
-            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Total Resueltas</div>
-            <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'baseline', marginBottom: '0.25rem' }}>
+          <div style={{ flex: '1 1 auto', minWidth: '140px', display: 'flex', flexDirection: 'column', paddingRight: '0.75rem', borderRight: '1px solid var(--border-subtle)' }}>
+            <div style={{ fontSize: '0.6875rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Total Resueltas</div>
+            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'baseline', marginTop: 'auto' }}>
               <div>
-                 <span style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--brand-500)', lineHeight: '1' }}>{tareasResueltasAnio.length}</span>
-                 <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginLeft: '4px', textTransform: 'uppercase' }}>año</span>
+                 <span style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--brand-500)', lineHeight: '1' }}>{tareasResueltasAnio.length}</span>
+                 <span style={{ fontSize: '0.625rem', fontWeight: 600, color: 'var(--text-muted)', marginLeft: '3px', textTransform: 'uppercase' }}>año</span>
               </div>
               <div>
-                 <span style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--brand-500)', lineHeight: '1' }}>{tareasResueltasMes.length}</span>
-                 <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginLeft: '4px', textTransform: 'uppercase' }}>mes</span>
+                 <span style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--brand-500)', lineHeight: '1' }}>{tareasResueltasMes.length}</span>
+                 <span style={{ fontSize: '0.625rem', fontWeight: 600, color: 'var(--text-muted)', marginLeft: '3px', textTransform: 'uppercase' }}>mes</span>
               </div>
             </div>
-
           </div>
 
-          <div style={{ flex: '1 1 180px', display: 'flex', flexDirection: 'column', paddingRight: '1.5rem', borderRight: '1px solid var(--border-subtle)' }}>
-            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Activas Ahora</div>
-            <div style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--priority-urgente)', lineHeight: '1', marginBottom: '0.25rem' }}>
+          <div style={{ flex: '1 1 auto', minWidth: '130px', display: 'flex', flexDirection: 'column', paddingRight: '0.75rem', borderRight: '1px solid var(--border-subtle)' }}>
+            <div style={{ fontSize: '0.6875rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Activas</div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--priority-urgente)', lineHeight: '1' }}>
               {visibleTareas.filter(t => t.estado !== 'cerrado' && t.estado !== 'resuelto').length}
             </div>
-            <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: 'auto', display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <span style={{ color: 'var(--priority-urgente)' }}>🔴</span> {visibleTareas.filter(t => t.prioridad === 'urgente' && t.estado === 'pendiente').length} urgentes pend.
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: 'auto', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <span style={{ color: 'var(--priority-urgente)' }}>🔴</span> {visibleTareas.filter(t => t.prioridad === 'urgente' && t.estado === 'pendiente').length} urgentes
             </div>
           </div>
 
           {/* Disponibilidad de Tablets */}
-          <div style={{ flex: '1 1 200px', display: 'flex', flexDirection: 'column', paddingRight: '1.5rem', borderRight: '1px solid var(--border-subtle)' }}>
-            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.75rem' }}>Tablets</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: 'auto' }}>
-              <div style={{ position: 'relative', width: '60px', height: '60px', flexShrink: 0 }}>
-                <svg width="60" height="60" viewBox="0 0 100 100" style={{ transform: 'rotate(-90deg)' }}>
-                  <circle cx="50" cy="50" r="45" fill="none" stroke="var(--border-subtle)" strokeWidth="10" />
-                  <circle cx="50" cy="50" r="45" fill="none" stroke="var(--brand-500)" strokeWidth="10" strokeDasharray="283" strokeDashoffset={283 - (283 * Math.max(0, settings.totalTablets - prestadasCount)) / (settings.totalTablets || 1)} strokeLinecap="round" />
+          <div style={{ flex: '1 1 auto', minWidth: '150px', display: 'flex', flexDirection: 'column', paddingRight: '0.75rem', borderRight: '1px solid var(--border-subtle)' }}>
+            <div style={{ fontSize: '0.6875rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Tablets</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: 'auto' }}>
+              <div style={{ position: 'relative', width: '48px', height: '48px', flexShrink: 0 }}>
+                <svg width="48" height="48" viewBox="0 0 100 100" style={{ transform: 'rotate(-90deg)' }}>
+                  <circle cx="50" cy="50" r="45" fill="none" stroke="var(--border-subtle)" strokeWidth="12" />
+                  <circle cx="50" cy="50" r="45" fill="none" stroke="var(--brand-500)" strokeWidth="12" strokeDasharray="283" strokeDashoffset={283 - (283 * Math.max(0, settings.totalTablets - prestadasCount)) / (settings.totalTablets || 1)} strokeLinecap="round" />
                 </svg>
                 <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
-                  <span style={{ fontSize: '0.875rem', fontWeight: 800, lineHeight: 1 }}>{Math.max(0, settings.totalTablets - prestadasCount)}</span>
+                  <span style={{ fontSize: '0.8125rem', fontWeight: 800, lineHeight: 1 }}>{Math.max(0, settings.totalTablets - prestadasCount)}</span>
                   <span style={{ fontSize: '0.5rem', color: 'var(--text-muted)' }}>/{settings.totalTablets}</span>
                 </div>
               </div>
               <div>
-                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1 }}>Libres</div>
+                <div style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1 }}>Libres</div>
               </div>
             </div>
           </div>
 
           {/* Tareas Rápidas (Compactas) */}
-          <div style={{ flex: '2 1 300px', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <div style={{ flex: '3 1 350px', display: 'flex', flexDirection: 'column', minWidth: '280px' }}>
+            <div style={{ fontSize: '0.6875rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <span>⚡</span> Tareas Rápidas (Mensual)
             </div>
-            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginTop: 'auto' }}>
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
               {[
                 { key: 'apoderados', label: 'Apoderados', color: '#3B82F6', icon: '👨‍👩‍👧‍👦' },
                 { key: 'alumnos', label: 'Alumnos', color: '#10B981', icon: '🎓' },
                 { key: 'profesores', label: 'Profesores', color: '#F59E0B', icon: '👨‍🏫' },
                 { key: 'administrativos', label: 'Admin', color: '#6366F1', icon: '🏢' }
               ].map(item => (
-                <div key={item.key} style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', padding: '0.25rem 0.6rem', background: `${item.color}10`, border: `1px solid ${item.color}30`, borderRadius: '99px' }}>
-                  <span style={{ fontSize: '1rem' }}>{item.icon}</span>
-                  <span style={{ fontSize: '1rem', fontWeight: 800, color: item.color }}>{helpCounters[item.key as keyof typeof helpCounters]}</span>
+                <div key={item.key} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', padding: '0.2rem 0.6rem', background: `${item.color}10`, border: `1px solid ${item.color}30`, borderRadius: '99px' }}>
+                  <span style={{ fontSize: '0.85rem' }}>{item.icon}</span>
+                  <span style={{ fontSize: '0.875rem', fontWeight: 800, color: item.color }}>{helpCounters[item.key as keyof typeof helpCounters]}</span>
                   <span style={{ fontSize: '0.625rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)' }}>{item.label}</span>
                 </div>
               ))}
             </div>
-            <div style={{ marginTop: 'auto', paddingTop: '0.75rem' }}>
-              <div style={{ padding: '0.5rem 0.75rem', background: 'rgba(59,130,246,0.04)', border: '1px dashed rgba(59,130,246,0.2)', borderRadius: 'var(--radius-md)', fontSize: '0.6875rem', color: 'var(--text-muted)', lineHeight: '1.4' }}>
-                <strong style={{ color: 'var(--brand-500)', fontWeight: 700 }}>ℹ️ Nota de Auditoría:</strong> Los contadores arriba reflejan ayudas rápidas que no requieren ticket formal.
-              </div>
+            <div style={{ padding: '0.4rem 0.6rem', background: 'rgba(59,130,246,0.04)', border: '1px dashed rgba(59,130,246,0.15)', borderRadius: '6px', fontSize: '0.625rem', color: 'var(--text-muted)', lineHeight: '1.3' }}>
+              <strong style={{ color: 'var(--brand-500)', fontWeight: 700 }}>ℹ️ Auditoría:</strong> Ayudas rápidas sin ticket.
             </div>
           </div>
         </motion.div>
