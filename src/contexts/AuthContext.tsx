@@ -6,6 +6,7 @@ import type { UserProfile } from '../types'
 
 const USE_MOCK = !import.meta.env.VITE_INSFORGE_ANON_KEY
 const MOCK_SESSION_KEY = 'blazz_mock_session'
+const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000 // 30 días
 
 interface AuthCtx {
   user: UserProfile | null
@@ -32,7 +33,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (USE_MOCK) {
           // Modo demo: restaurar sesión desde localStorage
           const saved = localStorage.getItem(MOCK_SESSION_KEY)
-          if (saved) setUser(JSON.parse(saved))
+          if (saved) {
+            const { user: savedUser, expiresAt } = JSON.parse(saved)
+            if (expiresAt && Date.now() < expiresAt) {
+              setUser(savedUser)
+            } else {
+              localStorage.removeItem(MOCK_SESSION_KEY) // Sesión expirada
+            }
+          }
           return
         }
         // Modo real: intentar restaurar sesión del SDK
@@ -72,7 +80,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           nombre: email.split('@')[0] ?? 'Administrador',
           rol: 'tecnico'
         }
-        localStorage.setItem(MOCK_SESSION_KEY, JSON.stringify(mockUser))
+        localStorage.setItem(MOCK_SESSION_KEY, JSON.stringify({
+          user: mockUser,
+          expiresAt: Date.now() + SESSION_TTL_MS
+        }))
         setUser(mockUser)
         return {}
       }
@@ -91,7 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(async () => {
     if (USE_MOCK) {
       localStorage.removeItem(MOCK_SESSION_KEY)
-      setUser(null)
+      setUser(null)  
       return
     }
     await insforge.auth.signOut()

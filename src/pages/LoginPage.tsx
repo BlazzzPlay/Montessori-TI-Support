@@ -115,9 +115,7 @@ export function LoginPage() {
             </button>
           </form>
 
-          <div style={{ marginTop: '1.5rem', padding: '1rem', background: 'rgba(37,99,235,0.06)', border: '1px solid rgba(37,99,235,0.2)', borderRadius: 'var(--radius-md)', fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
-            💡 <strong style={{ color: 'var(--brand-500)' }}>Modo demo activo:</strong> Ingresa cualquier email y una contraseña de al menos 4 caracteres para acceder con datos de muestra.
-          </div>
+
         </motion.div>
 
         <p style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
