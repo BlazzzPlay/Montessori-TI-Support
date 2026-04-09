@@ -238,95 +238,51 @@ function ReservaModal({ type, reserva, onClose, onSave }: { type: 'prestamo' | '
           <button className="btn btn-ghost btn-icon btn-sm" onClick={onClose}>✕</button>
         </div>
         <div className="modal-body">
-          {/* Selector de Bloques (Pre-configurados) */}
+          {/* Selectores de Bloques (Desplegables) */}
           {type === 'prestamo' && (
-            <div style={{ marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            <div style={{ marginBottom: '1.5rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', padding: '1rem', background: 'var(--bg-raised)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-subtle)' }}>
               <div>
-                <label className="form-label" style={{ marginBottom: '0.75rem', color: 'var(--brand-500)', fontWeight: 700 }}>🕒 Hora de Inicio</label>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.4rem' }}>
-                    {BLOQUES_MANANA.map(b => (
-                      <button 
-                        key={`start-m-${b.id}`} 
-                        className="btn btn-secondary btn-sm" 
-                        style={{ 
-                          fontSize: '0.7rem', padding: '0.4rem', fontWeight: 800, 
-                          background: form.fecha_inicio.endsWith(b.inicio) ? 'var(--brand-500)' : 'var(--bg-raised)', 
-                          color: form.fecha_inicio.endsWith(b.inicio) ? 'white' : 'inherit',
-                          border: '1px solid var(--border-subtle)' 
-                        }}
-                        onClick={() => {
-                          const today = formatInTimeZone(new Date(), CHILE_TZ, "yyyy-MM-dd")
-                          setForm({ ...form, fecha_inicio: `${today}T${b.inicio}` })
-                        }}
-                      >
-                        {b.inicio}
-                      </button>
-                    ))}
-                    {BLOQUES_TARDE.map(b => (
-                      <button 
-                        key={`start-t-${b.id}`} 
-                        className="btn btn-secondary btn-sm" 
-                        style={{ 
-                          fontSize: '0.7rem', padding: '0.4rem', fontWeight: 800, 
-                          background: form.fecha_inicio.endsWith(b.inicio) ? 'var(--brand-500)' : 'var(--bg-raised)', 
-                          color: form.fecha_inicio.endsWith(b.inicio) ? 'white' : 'inherit',
-                          border: '1px solid var(--border-subtle)' 
-                        }}
-                        onClick={() => {
-                          const today = formatInTimeZone(new Date(), CHILE_TZ, "yyyy-MM-dd")
-                          setForm({ ...form, fecha_inicio: `${today}T${b.inicio}` })
-                        }}
-                      >
-                        {b.inicio}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                <label className="form-label" style={{ fontSize: '0.625rem', color: 'var(--brand-500)', fontWeight: 800 }}>SUGERENCIA INICIO</label>
+                <select 
+                  className="select" 
+                  style={{ fontSize: '0.8125rem', fontWeight: 700 }}
+                  value={BLOQUES_MANANA.find(b => form.fecha_inicio.endsWith(b.inicio))?.inicio || BLOQUES_TARDE.find(b => form.fecha_inicio.endsWith(b.inicio))?.inicio || ''}
+                  onChange={e => {
+                    if (!e.target.value) return
+                    const today = formatInTimeZone(new Date(), CHILE_TZ, "yyyy-MM-dd")
+                    setForm({ ...form, fecha_inicio: `${today}T${e.target.value}` })
+                  }}
+                >
+                  <option value="">-- Seleccionar Bloque --</option>
+                  <optgroup label="Jornada Mañana">
+                    {BLOQUES_MANANA.map(b => <option key={`sel-s-m-${b.id}`} value={b.inicio}>{b.label} Bloque ({b.inicio})</option>)}
+                  </optgroup>
+                  <optgroup label="Jornada Tarde">
+                    {BLOQUES_TARDE.map(b => <option key={`sel-s-t-${b.id}`} value={b.inicio}>{b.label} Bloque ({b.inicio})</option>)}
+                  </optgroup>
+                </select>
               </div>
 
               <div>
-                <label className="form-label" style={{ marginBottom: '0.75rem', color: 'var(--priority-alta)', fontWeight: 700 }}>🏁 Hora de Término</label>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.4rem' }}>
-                    {[...BLOQUES_MANANA].map(b => (
-                      <button 
-                        key={`end-m-${b.id}`} 
-                        className="btn btn-secondary btn-sm" 
-                        style={{ 
-                          fontSize: '0.7rem', padding: '0.4rem', fontWeight: 800, 
-                          background: form.fecha_fin.endsWith(b.fin) ? 'var(--priority-alta)' : 'var(--bg-raised)', 
-                          color: form.fecha_fin.endsWith(b.fin) ? 'white' : 'inherit',
-                          border: '1px solid var(--border-subtle)' 
-                        }}
-                        onClick={() => {
-                          const today = formatInTimeZone(new Date(), CHILE_TZ, "yyyy-MM-dd")
-                          setForm({ ...form, fecha_fin: `${today}T${b.fin}` })
-                        }}
-                      >
-                        {b.fin}
-                      </button>
-                    ))}
-                    {[...BLOQUES_TARDE].map(b => (
-                      <button 
-                        key={`end-t-${b.id}`} 
-                        className="btn btn-secondary btn-sm" 
-                        style={{ 
-                          fontSize: '0.7rem', padding: '0.4rem', fontWeight: 800, 
-                          background: form.fecha_fin.endsWith(b.fin) ? 'var(--priority-alta)' : 'var(--bg-raised)', 
-                          color: form.fecha_fin.endsWith(b.fin) ? 'white' : 'inherit',
-                          border: '1px solid var(--border-subtle)' 
-                        }}
-                        onClick={() => {
-                          const today = formatInTimeZone(new Date(), CHILE_TZ, "yyyy-MM-dd")
-                          setForm({ ...form, fecha_fin: `${today}T${b.fin}` })
-                        }}
-                      >
-                        {b.fin}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                <label className="form-label" style={{ fontSize: '0.625rem', color: 'var(--priority-alta)', fontWeight: 800 }}>SUGERENCIA TÉRMINO</label>
+                <select 
+                  className="select" 
+                  style={{ fontSize: '0.8125rem', fontWeight: 700 }}
+                  value={BLOQUES_MANANA.find(b => form.fecha_fin.endsWith(b.fin))?.fin || BLOQUES_TARDE.find(b => form.fecha_fin.endsWith(b.fin))?.fin || ''}
+                  onChange={e => {
+                    if (!e.target.value) return
+                    const today = formatInTimeZone(new Date(), CHILE_TZ, "yyyy-MM-dd")
+                    setForm({ ...form, fecha_fin: `${today}T${e.target.value}` })
+                  }}
+                >
+                  <option value="">-- Seleccionar Bloque --</option>
+                  <optgroup label="Jornada Mañana">
+                    {BLOQUES_MANANA.map(b => <option key={`sel-e-m-${b.id}`} value={b.fin}>{b.label} Término ({b.fin})</option>)}
+                  </optgroup>
+                  <optgroup label="Jornada Tarde">
+                    {BLOQUES_TARDE.map(b => <option key={`sel-e-t-${b.id}`} value={b.fin}>{b.label} Término ({b.fin})</option>)}
+                  </optgroup>
+                </select>
               </div>
             </div>
           )}
