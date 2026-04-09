@@ -9,6 +9,7 @@ import { useHelpCounters } from '../hooks/useHelpCounters'
 import { useReservas } from '../hooks/useReservas'
 import { useSettings } from '../hooks/useSettings'
 import { formatDate, formatDateTime, STATUS_LABELS } from '../lib/utils'
+import { format, isAfter, isToday, differenceInMinutes } from 'date-fns'
 import type { Tarea } from '../types'
 
 // ──────────────────────────────────────────────────
@@ -187,6 +188,27 @@ export function AuditoriaPage() {
       const d = new Date(t.resuelto_at ?? t.updated_at)
       return d.getFullYear() === currentYear
   }), [tareasResueltas, currentYear])
+
+  const tabletMonitor = useMemo(() => {
+    const now = new Date()
+    return reservas.filter(r => {
+      if (r.estado === 'en_prestamo') return true
+      if (r.estado === 'reservado' && isToday(new Date(r.fecha_inicio))) return true
+      return false
+    }).sort((a, b) => {
+      // Priorizar en_prestamo que estén vencidos
+      const aVencido = a.estado === 'en_prestamo' && isAfter(now, new Date(a.fecha_fin))
+      const bVencido = b.estado === 'en_prestamo' && isAfter(now, new Date(b.fecha_fin))
+      if (aVencido && !bVencido) return -1
+      if (!aVencido && bVencido) return 1
+      
+      // Luego por estado y luego por hora de inicio
+      if (a.estado === 'en_prestamo' && b.estado === 'reservado') return -1
+      if (a.estado === 'reservado' && b.estado === 'en_prestamo') return 1
+      
+      return new Date(a.fecha_inicio).getTime() - new Date(b.fecha_inicio).getTime()
+    })
+  }, [reservas])
 
   const prestadasCount = reservas.filter(r => r.estado === 'en_prestamo').reduce((acc, r) => acc + r.cantidad, 0)
 
@@ -378,6 +400,70 @@ export function AuditoriaPage() {
                 <Bar dataKey="resueltas" name="resueltas" fill="#2563EB" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
+          </div>
+
+          {/* Monitor de Tablets en Tiempo Real */}
+          <div className="chart-card" style={{ display: 'flex', flexDirection: 'column' }}>
+            <div className="chart-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span>📡 Monitor de Tablets</span>
+              <span style={{ fontSize: '0.625rem', padding: '2px 6px', background: 'var(--brand-500)20', color: 'var(--brand-500)', borderRadius: '4px' }}>HOY</span>
+            </div>
+            
+            <div style={{ flex: 1, overflowY: 'auto', maxHeight: '280px', marginTop: '0.5rem' }}>
+              {tabletMonitor.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
+                  <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>📭</div>
+                  <div style={{ fontSize: '0.8125rem' }}>No hay préstamos o reservas para hoy.</div>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  {tabletMonitor.map(r => {
+                    const now = new Date();
+                    const fin = new Date(r.fecha_fin);
+                    const isOverdue = r.estado === 'en_prestamo' && isAfter(now, fin);
+                    const diffMins = Math.abs(differenceInMinutes(now, fin));
+                    const hours = Math.floor(diffMins / 60);
+                    const mins = diffMins % 60;
+                    
+                    return (
+                      <div key={r.id} style={{ 
+                        padding: '0.75rem', 
+                        background: 'var(--bg-default)', 
+                        border: `1px solid ${isOverdue ? 'var(--priority-urgente)40' : 'var(--border-subtle)'}`, 
+                        borderRadius: 'var(--radius-md)',
+                        position: 'relative',
+                        borderLeft: `4px solid ${isOverdue ? 'var(--priority-urgente)' : r.estado === 'en_prestamo' ? 'var(--priority-alta)' : 'var(--brand-500)'}`
+                      }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.25rem' }}>
+                          <div style={{ fontWeight: 700, fontSize: '0.875rem' }}>{r.solicitante_nombre}</div>
+                          <span style={{ fontSize: '0.625rem', fontWeight: 800, padding: '1px 5px', borderRadius: '4px', background: isOverdue ? 'var(--priority-urgente)20' : 'var(--bg-active)', color: isOverdue ? 'var(--priority-urgente)' : 'inherit' }}>
+                             {r.cantidad} {r.cantidad === 1 ? 'TAB' : 'TABS'}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.35rem' }}>
+                          📍 {r.curso || 'Sin curso'} · {r.solicitante_tipo}
+                        </div>
+                        
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid var(--border-subtle)' }}>
+                           <div style={{ fontSize: '0.6875rem', fontWeight: 600 }}>
+                              {isOverdue ? (
+                                <span style={{ color: 'var(--priority-urgente)' }}>🔥 ATRASADO: {hours}h {mins}m</span>
+                              ) : r.estado === 'en_prestamo' ? (
+                                <span style={{ color: 'var(--priority-alta)' }}>⌛ Entrega: {format(fin, 'HH:mm')}</span>
+                              ) : (
+                                <span style={{ color: 'var(--brand-500)' }}>📅 Lista: {format(new Date(r.fecha_inicio), 'HH:mm')}</span>
+                              )}
+                           </div>
+                           <div style={{ fontSize: '0.625rem', textTransform: 'uppercase', fontWeight: 800, color: 'var(--text-muted)' }}>
+                              {r.estado.replace('_', ' ')}
+                           </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         </motion.div>
 
