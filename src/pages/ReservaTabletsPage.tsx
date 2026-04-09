@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { AppLayout } from '../components/layout/AppLayout'
 import { useReservas } from '../hooks/useReservas'
+import { useSettings } from '../hooks/useSettings'
 import { useToast } from '../contexts/ThemeContext'
 import type { ReservaTablet, TipoSolicitante, EstadoReserva } from '../types'
 import { format } from 'date-fns'
@@ -10,6 +11,7 @@ import { es } from 'date-fns/locale'
 export function ReservaTabletsPage() {
   const { reservas, loading, createReserva, updateReserva, deleteReserva } = useReservas()
   const { addToast } = useToast()
+  const { settings } = useSettings()
   
   const [modalType, setModalType] = useState<'prestamo' | 'reserva' | null>(null)
   
@@ -55,20 +57,27 @@ export function ReservaTabletsPage() {
         </div>
 
         <div className="kpi-grid">
-          <div className="kpi-card">
-            <div className="kpi-label">Tablets Fuera</div>
-            <div className="kpi-value" style={{ color: 'var(--brand-500)' }}>{prestadasCount}</div>
-            <div className="kpi-trend">En uso actualmente</div>
+          <div className="kpi-card" style={{ gridColumn: 'span 2', display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '1.5rem' }}>
+            <div style={{ position: 'relative', width: '80px', height: '80px', flexShrink: 0 }}>
+              <svg width="80" height="80" viewBox="0 0 100 100" style={{ transform: 'rotate(-90deg)' }}>
+                <circle cx="50" cy="50" r="45" fill="none" stroke="var(--border-subtle)" strokeWidth="10" />
+                <circle cx="50" cy="50" r="45" fill="none" stroke="var(--brand-500)" strokeWidth="10" strokeDasharray="283" strokeDashoffset={283 - (283 * Math.max(0, settings.totalTablets - prestadasCount)) / (settings.totalTablets || 1)} strokeLinecap="round" />
+              </svg>
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
+                <span style={{ fontSize: '1.25rem', fontWeight: 800, lineHeight: 1 }}>{Math.max(0, settings.totalTablets - prestadasCount)}</span>
+                <span style={{ fontSize: '0.625rem', color: 'var(--text-muted)' }}>/{settings.totalTablets}</span>
+              </div>
+            </div>
+            <div>
+              <div className="kpi-label">Disponibilidad de Tablets</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 800 }}>{Math.max(0, settings.totalTablets - prestadasCount)} Libres</div>
+              <div className="kpi-trend" style={{ color: 'var(--text-muted)' }}>{prestadasCount} en préstamo actual</div>
+            </div>
           </div>
           <div className="kpi-card">
             <div className="kpi-label">Pendientes Hoy</div>
             <div className="kpi-valueText" style={{ fontSize: '1.75rem', fontWeight: 800 }}>{reservasHoy}</div>
             <div className="kpi-trend">Reservas por entregar</div>
-          </div>
-          <div className="kpi-card">
-            <div className="kpi-label">Capacidad Total</div>
-            <div className="kpi-valueText" style={{ fontSize: '1.75rem', fontWeight: 800 }}>30</div>
-            <div className="kpi-trend">Stock teórico dpto.</div>
           </div>
         </div>
 

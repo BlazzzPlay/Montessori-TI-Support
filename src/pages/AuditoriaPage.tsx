@@ -6,6 +6,8 @@ import {
 } from 'recharts'
 import { useTareas } from '../hooks/useTareas'
 import { useHelpCounters } from '../hooks/useHelpCounters'
+import { useReservas } from '../hooks/useReservas'
+import { useSettings } from '../hooks/useSettings'
 import { formatDate, formatDateTime, STATUS_LABELS } from '../lib/utils'
 import type { Tarea } from '../types'
 
@@ -146,6 +148,8 @@ function RenderTable({ lista, emptyIcon, emptyTitle, emptyDesc, totalTareas, onR
 
 export function AuditoriaPage() {
   const { tareas, loading } = useTareas()
+  const { reservas } = useReservas()
+  const { settings } = useSettings()
   const { helpCounters } = useHelpCounters()
   
   const [dateFrom, setDateFrom] = useState('')
@@ -183,6 +187,8 @@ export function AuditoriaPage() {
       const d = new Date(t.resuelto_at ?? t.updated_at)
       return d.getFullYear() === currentYear
   }), [tareasResueltas, currentYear])
+
+  const prestadasCount = reservas.filter(r => r.estado === 'en_prestamo').reduce((acc, r) => acc + r.cantidad, 0)
 
   // Stats y gráficos calculados desde datos reales (todas las tareas visibles, no solo el filtro)
   const etiquetaStats = useMemo(() => calcEtiquetaStats(visibleTareas), [visibleTareas])
@@ -248,6 +254,7 @@ export function AuditoriaPage() {
             background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-lg)', padding: '1.25rem'
           }}
         >
+
           {/* Total Resueltas (Año/Mes) */}
           <div style={{ flex: '1 1 220px', display: 'flex', flexDirection: 'column', paddingRight: '1.5rem', borderRight: '1px solid var(--border-subtle)' }}>
             <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Total Resueltas</div>
@@ -264,7 +271,6 @@ export function AuditoriaPage() {
 
           </div>
 
-          {/* Activas Ahora */}
           <div style={{ flex: '1 1 180px', display: 'flex', flexDirection: 'column', paddingRight: '1.5rem', borderRight: '1px solid var(--border-subtle)' }}>
             <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Activas Ahora</div>
             <div style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--priority-urgente)', lineHeight: '1', marginBottom: '0.25rem' }}>
@@ -272,6 +278,26 @@ export function AuditoriaPage() {
             </div>
             <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: 'auto', display: 'flex', alignItems: 'center', gap: '4px' }}>
               <span style={{ color: 'var(--priority-urgente)' }}>🔴</span> {visibleTareas.filter(t => t.prioridad === 'urgente' && t.estado === 'pendiente').length} urgentes pend.
+            </div>
+          </div>
+
+          {/* Disponibilidad de Tablets */}
+          <div style={{ flex: '1 1 200px', display: 'flex', flexDirection: 'column', paddingRight: '1.5rem', borderRight: '1px solid var(--border-subtle)' }}>
+            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.75rem' }}>Tablets</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: 'auto' }}>
+              <div style={{ position: 'relative', width: '60px', height: '60px', flexShrink: 0 }}>
+                <svg width="60" height="60" viewBox="0 0 100 100" style={{ transform: 'rotate(-90deg)' }}>
+                  <circle cx="50" cy="50" r="45" fill="none" stroke="var(--border-subtle)" strokeWidth="10" />
+                  <circle cx="50" cy="50" r="45" fill="none" stroke="var(--brand-500)" strokeWidth="10" strokeDasharray="283" strokeDashoffset={283 - (283 * Math.max(0, settings.totalTablets - prestadasCount)) / (settings.totalTablets || 1)} strokeLinecap="round" />
+                </svg>
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
+                  <span style={{ fontSize: '0.875rem', fontWeight: 800, lineHeight: 1 }}>{Math.max(0, settings.totalTablets - prestadasCount)}</span>
+                  <span style={{ fontSize: '0.5rem', color: 'var(--text-muted)' }}>/{settings.totalTablets}</span>
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1 }}>Libres</div>
+              </div>
             </div>
           </div>
 

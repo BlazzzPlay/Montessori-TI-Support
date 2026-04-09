@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { AppLayout } from '../components/layout/AppLayout'
 import { useTareas } from '../hooks/useTareas'
 import { useEtiquetas } from '../hooks/useEtiquetas'
+import { useSettings } from '../hooks/useSettings'
 import { useToast } from '../contexts/ThemeContext'
 import type { Etiqueta } from '../types'
 
@@ -149,6 +150,7 @@ function EtiquetaModal({ etiqueta, onClose, onSave }: EtiquetaModalProps) {
 export function ConfiguracionPage() {
   const { tareas, etiquetas, refetch } = useTareas()
   const { addToast } = useToast()
+  const { settings, updateSettings } = useSettings()
   const { loading: etLoading, createEtiqueta, updateEtiqueta, deleteEtiqueta } = useEtiquetas(etiquetas, refetch)
 
   const [modalOpen, setModalOpen] = useState(false)
@@ -309,6 +311,30 @@ export function ConfiguracionPage() {
                   </div>
                 </div>
               ))}
+            </div>
+
+            <div style={{ marginTop: '1.5rem', background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', padding: '1.25rem' }}>
+              <h3 style={{ fontWeight: 700, marginBottom: '0.75rem', fontSize: '0.9375rem' }}>📱 Tablets del Departamento</h3>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <div style={{ flex: 1 }}>
+                  <label className="form-label">Total de tablets en el liceo (Capacidad máxima)</label>
+                  <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>Esto se reflejará en los indicadores de disponibilidad.</p>
+                </div>
+                <div style={{ width: '120px' }}>
+                  <input 
+                    type="number" 
+                    className="input" 
+                    value={settings.totalTablets} 
+                    onChange={e => {
+                      const val = parseInt(e.target.value);
+                      if (!isNaN(val) && val >= 0) {
+                        updateSettings({ totalTablets: val });
+                      }
+                    }} 
+                    min={0}
+                  />
+                </div>
+              </div>
             </div>
 
             <div style={{ marginTop: '1.5rem', background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', padding: '1.25rem' }}>

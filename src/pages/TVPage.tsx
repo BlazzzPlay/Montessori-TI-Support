@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { useTareas } from '../hooks/useTareas'
 import { useHelpCounters } from '../hooks/useHelpCounters'
 import { sortForTV, getDeadlineStatus } from '../lib/utils'
+import { useReservas } from '../hooks/useReservas'
+import { useSettings } from '../hooks/useSettings'
 import type { Tarea } from '../types'
 
 
@@ -61,6 +63,8 @@ function TVCardWrapper({ tarea }: { tarea: Tarea }) {
 export function TVPage() {
   const { tareas, loading, refetch } = useTareas()
   const { helpCounters, refresh: refreshHelp } = useHelpCounters()
+  const { reservas } = useReservas()
+  const { settings } = useSettings()
   const [now, setNow] = useState(new Date())
   const [lastRefresh, setLastRefresh] = useState(new Date())
 
@@ -86,6 +90,8 @@ export function TVPage() {
 
   const urgentes = active.filter(t => t.prioridad === 'urgente').length
   const enProgreso = active.filter(t => t.estado === 'en_progreso').length
+
+  const prestadasCount = reservas.filter(r => r.estado === 'en_prestamo').reduce((acc, r) => acc + r.cantidad, 0)
 
   const timeStr = now.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
   const dateStr = now.toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
@@ -146,6 +152,23 @@ export function TVPage() {
 
         {/* Sidebar for TV: Help Counters Summary */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }} className="tv-sidebar-stats">
+          <div style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 20, padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div style={{ position: 'relative', width: '80px', height: '80px', flexShrink: 0 }}>
+              <svg width="80" height="80" viewBox="0 0 100 100" style={{ transform: 'rotate(-90deg)' }}>
+                <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="10" />
+                <circle cx="50" cy="50" r="45" fill="none" stroke="#60A5FA" strokeWidth="10" strokeDasharray="283" strokeDashoffset={283 - (283 * Math.max(0, settings.totalTablets - prestadasCount)) / (settings.totalTablets || 1)} strokeLinecap="round" />
+              </svg>
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
+                <span style={{ fontSize: '1.25rem', fontWeight: 800, lineHeight: 1, color: '#fff' }}>{Math.max(0, settings.totalTablets - prestadasCount)}</span>
+                <span style={{ fontSize: '0.625rem', color: 'rgba(255,255,255,0.5)' }}>/{settings.totalTablets}</span>
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Tablets libres</div>
+              <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#fff' }}>Disponibilidad</div>
+            </div>
+          </div>
+
           <div style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 20, padding: '1.5rem' }}>
             <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#fff', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               ⚡ Ayuda Rápida <span style={{ fontSize: '0.75rem', fontWeight: 400, color: 'rgba(255,255,255,0.4)' }}>MES</span>
