@@ -11,7 +11,7 @@ export function ReservaTabletsPage() {
   const { reservas, loading, createReserva, updateReserva, deleteReserva } = useReservas()
   const { addToast } = useToast()
   
-  const [modalOpen, setModalOpen] = useState(false)
+  const [modalType, setModalType] = useState<'prestamo' | 'reserva' | null>(null)
   
   // Stats
   const prestadasCount = reservas.filter(r => r.estado === 'en_prestamo').reduce((acc, r) => acc + r.cantidad, 0)
@@ -21,8 +21,8 @@ export function ReservaTabletsPage() {
     const res = await createReserva(fields)
     if (res.error) addToast(res.error, 'error')
     else {
-      addToast('✓ Reserva creada exitosamente', 'success')
-      setModalOpen(false)
+      addToast(modalType === 'prestamo' ? '✓ Préstamo registrado' : '✓ Reserva creada', 'success')
+      setModalType(null)
     }
   }
 
@@ -37,16 +37,21 @@ export function ReservaTabletsPage() {
   }
 
   return (
-    <AppLayout tareas={[]} onNewTask={() => { setModalOpen(true) }}>
+    <AppLayout tareas={[]} onNewTask={() => { setModalType('prestamo') }}>
       <div className="page-container">
         <div className="page-header">
           <div>
             <h1 className="page-title">Reserva de Tablets</h1>
             <p className="page-subtitle">Gestión de préstamos para alumnos y profesores</p>
           </div>
-          <button className="btn btn-primary" onClick={() => { setModalOpen(true) }}>
-            + Registrar Préstamo
-          </button>
+          <div style={{ display: 'flex', gap: '0.75rem' }}>
+            <button className="btn btn-secondary" onClick={() => { setModalType('reserva') }}>
+              📅 Nueva Reserva
+            </button>
+            <button className="btn btn-primary" onClick={() => { setModalType('prestamo') }}>
+              🚀 Registrar Préstamo
+            </button>
+          </div>
         </div>
 
         <div className="kpi-grid">
@@ -144,9 +149,10 @@ export function ReservaTabletsPage() {
       </div>
 
       <AnimatePresence>
-        {modalOpen && (
+        {modalType && (
           <ReservaModal 
-            onClose={() => setModalOpen(false)}
+            type={modalType}
+            onClose={() => setModalType(null)}
             onSave={handleCreate}
           />
         )}
@@ -155,7 +161,7 @@ export function ReservaTabletsPage() {
   )
 }
 
-function ReservaModal({ onClose, onSave }: { onClose: () => void, onSave: (f: any) => void }) {
+function ReservaModal({ type, onClose, onSave }: { type: 'prestamo' | 'reserva', onClose: () => void, onSave: (f: any) => void }) {
   const [form, setForm] = useState({
     solicitante_nombre: '',
     solicitante_tipo: 'profesor' as TipoSolicitante,
@@ -163,14 +169,15 @@ function ReservaModal({ onClose, onSave }: { onClose: () => void, onSave: (f: an
     curso: '',
     fecha_inicio: format(new Date(), "yyyy-MM-dd'T'HH:mm"),
     fecha_fin: format(new Date(Date.now() + 3600000 * 2), "yyyy-MM-dd'T'HH:mm"),
-    notas: ''
+    notas: '',
+    estado: type === 'prestamo' ? 'en_prestamo' : 'reservado'
   })
 
   return (
-    <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && onClose()}>
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
       <motion.div initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} className="modal" style={{ maxWidth: 500 }}>
         <div className="modal-header">
-          <h2 className="modal-title">📋 Nueva Reserva de Tablets</h2>
+          <h2 className="modal-title">{type === 'prestamo' ? '🚀 Registrar Préstamo' : '📅 Nueva Reserva'}</h2>
           <button className="btn btn-ghost btn-icon btn-sm" onClick={onClose}>✕</button>
         </div>
         <div className="modal-body">
@@ -212,7 +219,9 @@ function ReservaModal({ onClose, onSave }: { onClose: () => void, onSave: (f: an
         </div>
         <div className="modal-footer">
           <button className="btn btn-ghost" onClick={onClose}>Cancelar</button>
-          <button className="btn btn-primary" onClick={() => onSave(form)}>Confirmar Reserva</button>
+          <button className="btn btn-primary" onClick={() => onSave(form)}>
+            {type === 'prestamo' ? 'Registrar Préstamo' : 'Confirmar Reserva'}
+          </button>
         </div>
       </motion.div>
     </div>
